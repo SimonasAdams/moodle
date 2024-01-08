@@ -1941,7 +1941,7 @@ class core_plugin_manager {
             'mod' => array(
                 'assign', 'bigbluebuttonbn', 'book', 'chat', 'choice', 'data', 'feedback', 'folder',
                 'forum', 'glossary', 'h5pactivity', 'imscp', 'label', 'lesson', 'lti', 'page',
-                'quiz', 'resource', 'scorm', 'survey', 'url', 'wiki', 'workshop'
+                'quiz', 'qbank', 'resource', 'scorm', 'survey', 'url', 'wiki', 'workshop'
             ),
 
             'paygw' => [

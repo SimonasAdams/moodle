@@ -166,7 +166,8 @@ class content_item_readonly_repository implements content_item_readonly_reposito
                 $return[] = $contentitem;
             }
         }
-        return $return;
+        // These module types are managed via question bank administration and are not to be rendered to the course page.
+        return \qbank_sharing\helper::filter_plugins($return);
     }
 
     /**
@@ -237,7 +238,7 @@ class content_item_readonly_repository implements content_item_readonly_reposito
                 $return[] = $contentitem;
             }
         }
-
-        return $return;
+        // These module types are managed via question bank administration and are not to be rendered to the course page.
+        return \qbank_sharing\helper::filter_plugins($return);
     }
 }
