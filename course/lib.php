@@ -614,9 +614,10 @@ function course_create_sections_if_missing($courseorid, $sections) {
  * @param int|stdClass $beforemod id or object with field id corresponding to the module
  *     before which the module needs to be included. Null for inserting in the
  *     end of the section
+ * @param string $modname name of the module in the modules table
  * @return int The course_sections ID where the module is inserted
  */
-function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = null) {
+function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = null, $modname = '') {
     global $DB, $COURSE;
     if (is_object($beforemod)) {
         $beforemod = $beforemod->id;
@@ -626,6 +627,20 @@ function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = 
     } else {
         $courseid = $courseorid;
     }
+
+    if (!$modname) {
+        $sql = "SELECT name
+                FROM {modules} AS m
+                JOIN {course_modules} AS cm ON cm.module = m.id
+                WHERE cm.id = :cmid";
+        $modname = $DB->get_field_sql($sql, ['cmid' => $cmid], MUST_EXIST);
+    }
+
+    // Plugins with this feature flag set to false must ALWAYS be in section 0.
+    if ($sectionnum != 0 && !plugin_supports('mod', $modname, FEATURE_CAN_DISPLAY, true)) {
+        $sectionnum = 0;
+    }
+
     // Do not try to use modinfo here, there is no guarantee it is valid!
     $section = $DB->get_record('course_sections',
             array('course' => $courseid, 'section' => $sectionnum), '*', IGNORE_MISSING);
@@ -1376,6 +1391,7 @@ function course_delete_section_async($section, $forcedeleteifnotempty = true) {
     $modules = $DB->get_records('course_modules', ['section' => $section->id], '');
     $sectionzero = $DB->get_record('course_sections', ['course' => $section->course, 'section' => '0']);
     foreach ($modules as $mod) {
+        $mod->modname = $DB->get_field('modules', 'name', ['id' => $mod->module], MUST_EXIST);
         moveto_module($mod, $sectionzero);
     }
 
@@ -1608,6 +1624,11 @@ function reorder_sections($sections, $origin_position, $target_position) {
 function moveto_module($mod, $section, $beforemod=NULL) {
     global $OUTPUT, $DB;
 
+    if ($section->section != 0 && !plugin_supports('mod', $mod->modname, FEATURE_CAN_DISPLAY, true)) {
+        echo $OUTPUT->notification("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0");
+        return $mod->visible;
+    }
+
     // Current module visibility state - return value of this function.
     $modvisible = $mod->visible;
 
@@ -1617,7 +1638,7 @@ function moveto_module($mod, $section, $beforemod=NULL) {
     }
 
     // Add the module into the new section.
-    course_add_cm_to_section($section->course, $mod->id, $section->section, $beforemod);
+    course_add_cm_to_section($section->course, $mod->id, $section->section, $beforemod, $mod->modname);
 
     // If moving to a hidden section then hide module.
     if ($mod->section != $section->id) {
@@ -3513,6 +3534,11 @@ function duplicate_module($course, $cm, int $sectionid = null, bool $changename 
     require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
     require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
     require_once($CFG->libdir . '/filelib.php');
+
+    // Plugins with this feature flag set to false must ALWAYS be in section 0.
+    if (!plugin_supports('mod', $cm->modname, FEATURE_CAN_DISPLAY, true)) {
+        $sectionid = get_fast_modinfo($course)->get_section_info(0, MUST_EXIST)->id;
+    }
 
     $a          = new stdClass();
     $a->modtype = get_string('modulename', $cm->modname);

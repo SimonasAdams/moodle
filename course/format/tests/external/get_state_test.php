@@ -109,13 +109,14 @@ class get_state_test extends \externallib_advanced_testcase {
         }
 
         // Add some activities to the course.
-        $this->create_activity($course->id, 'page', 1, true, $canedit);
-        $this->create_activity($course->id, 'forum', 1, true, $canedit);
-        $this->create_activity($course->id, 'book', 1, false, $canedit);
-        $this->create_activity($course->id, 'assign', 2, false, $canedit);
-        $this->create_activity($course->id, 'glossary', 4, true, $canedit);
-        $this->create_activity($course->id, 'label', 5, false, $canedit);
-        $this->create_activity($course->id, 'feedback', 5, true, $canedit);
+        $this->create_activity($course->id, 'qbank', 0, true, $canedit, false);
+        $this->create_activity($course->id, 'page', 1, true, $canedit, true);
+        $this->create_activity($course->id, 'forum', 1, true, $canedit, true);
+        $this->create_activity($course->id, 'book', 1, false, $canedit, true);
+        $this->create_activity($course->id, 'assign', 2, false, $canedit, true);
+        $this->create_activity($course->id, 'glossary', 4, true, $canedit, true);
+        $this->create_activity($course->id, 'label', 5, false, $canedit, true);
+        $this->create_activity($course->id, 'feedback', 5, true, $canedit, true);
 
         if ($expectedexception) {
             $this->expectException($expectedexception);
@@ -251,16 +252,23 @@ class get_state_test extends \externallib_advanced_testcase {
      * @param bool $visible Whether the activity will be visible or not.
      * @param bool $canedit Whether the activity will be accessed later by a user with editing capabilities
      */
-    private function create_activity(int $courseid, string $type, int $section, bool $visible = true, bool $canedit = true): void {
+    private function create_activity(
+            int $courseid,
+            string $type,
+            int $section,
+            bool $visible = true,
+            bool $canedit = true,
+            bool $canrender = true
+    ): void {
         $activity = $this->getDataGenerator()->create_module(
-            $type,
-            ['course' => $courseid],
-            ['section' => $section, 'visible' => $visible]
+                $type,
+                ['course' => $courseid],
+                ['section' => $section, 'visible' => $visible]
         );
 
-        list(, $activitycm) = get_course_and_cm_from_instance($activity->id, $type);
+        [, $activitycm] = get_course_and_cm_from_instance($activity->id, $type);
 
-        if ($visible || $canedit) {
+        if (($visible || $canedit) && $canrender) {
             $this->activities[$activitycm->id] = $activitycm;
             $this->sections[$section][] = $activitycm->id;
         }
