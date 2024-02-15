@@ -266,22 +266,9 @@ function question_category_delete_safe($category): void {
             }
         }
         if (!empty($questionids)) {
-            // The default place to attach categories is on a mod_qbank instance in the site course.
-            $modinfo = get_fast_modinfo(get_site());
-            if (!$qbanks = $modinfo->get_instances_of('qbank')) {
-                $mod = \core_question\sharing\helper::create_default_open_instance(
-                        $modinfo->get_course(),
-                        'System shared question bank'
-                );
-                $cmid = $mod->coursemodule;
-            } else {
-                usort($qbanks, static fn($a, $b) => $a->id <=> $b->id);
-                $qbank = reset($qbanks);
-                $cmid = $qbank->id;
-            }
-            $modcontext = context_module::instance($cmid)->id;
+            $qbank = core_question\sharing\helper::get_default_open_instance_system_type(get_site(), true);
             $name = $context !== false ? $context->get_context_name() : get_string('unknown', 'question');
-            question_save_from_deletion(array_keys($questionids), $modcontext, $name, $rescue);
+            question_save_from_deletion(array_keys($questionids), $qbank->context->id, $name, $rescue);
         }
     }
 
@@ -501,7 +488,7 @@ function question_delete_course_category($category, $newcategory, $notused=false
  * Creates a new category to save the questions in use.
  *
  * @param array $questionids of question ids
- * @param object $newcontextid the context to create the saved category in.
+ * @param int $newcontextid the context to create the saved category in.
  * @param string $oldplace a textual description of the think being deleted,
  *      e.g. from get_context_name
  * @param object $newcategory
@@ -1249,6 +1236,7 @@ function question_get_top_categories_for_contexts($contextids): array {
 }
 
 /**
+ * // MDL-71378 TODO: refactor for deprecated contexts.
  * Gets the default category in the most specific context.
  * If no categories exist yet then default ones are created in all contexts.
  *

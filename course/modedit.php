@@ -172,6 +172,8 @@ if ($mform->is_cancelled()) {
         ];
         $activityurl = new moodle_url("/mod/$module->name/view.php", $urlparams);
         redirect($activityurl);
+    } else if (plugin_supports('mod', $module->name, FEATURE_PUBLISHES_QUESTIONS)) {
+        redirect(new moodle_url("/question/banks.php", ['courseid' => $course->id]));
     } else {
         redirect(course_get_url($course, $cw->section, array('sr' => $sectionreturn)));
     }
