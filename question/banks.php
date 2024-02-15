@@ -59,7 +59,7 @@ $PAGE->set_url($pageurl);
 
 if ($createdefault) {
     require_sesskey();
-    helper::create_default_open_instance($course, $course->fullname);
+    question_bank_helper::create_default_open_instance($course, $course->fullname . ' course question bank');
     \core\notification::add(get_string('defaultcreated', 'question'), \core\notification::SUCCESS);
     redirect($pageurl);
 }
