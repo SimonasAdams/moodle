@@ -47,6 +47,8 @@ class helper_test extends \advanced_testcase {
         global $DB;
 
         $this->resetAfterTest();
+        //MDL-71378 TODO: update for capability checks.
+        self::setAdminUser();
 
         $qgen = self::getDataGenerator()->get_plugin_generator('core_question');
         $openmodgen = self::getDataGenerator()->get_plugin_generator('mod_qbank');
@@ -155,8 +157,8 @@ class helper_test extends \advanced_testcase {
 
         $filteredmods = helper::filter_by_question_edit_access(array_keys(question_edit_contexts::$caps), $allopenmods);
 
-        $this->assertCount(1, $filteredmods['qbank']);
-        $filteredmod = reset($filteredmods['qbank']);
+        $this->assertCount(1, $filteredmods['qbank_' . $course->id]);
+        $filteredmod = reset($filteredmods['qbank_' . $course->id]);
         $this->assertEquals($openmod1->name, $filteredmod->name);
     }
 
