@@ -160,6 +160,7 @@ function question_can_delete_cat($todelete) {
 }
 
 /**
+ * MDL-71378 TODO: deprecate anything using param courseid
  * Common setup for all pages for editing questions.
  * @param string $baseurl the name of the script calling this funciton. For examle 'qusetion/edit.php'.
  * @param string $edittab code for this edit tab
@@ -244,6 +245,7 @@ function question_edit_setup($edittab, $baseurl, $requirecmid = false, $unused =
  */
 function question_build_edit_resources($edittab, $baseurl, $params,
         $defaultquestionsperpage = DEFAULT_QUESTIONS_PER_PAGE) {
+    //MDL-71378 TODO: deprecate courseid
     global $DB;
 
     $thispageurl = new moodle_url($baseurl);
