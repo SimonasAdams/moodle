@@ -186,8 +186,8 @@ if ($message = optional_param('message', '', PARAM_TEXT)) {
     core\notification::add($message, core\notification::SUCCESS);
 }
 
-$courseopenbanks = \core_question\sharing\helper::get_course_open_instances($course->id);
-$allopenbanks = \core_question\sharing\helper::get_all_open_instances([$course->id]);
+[$courseopenbanks, ] = \core_question\sharing\helper::get_course_open_instances($course->id);
+[$allopenbanks, ] = \core_question\sharing\helper::get_all_open_instances([$course->id]);
 
 echo $OUTPUT->header();
 // Initialise the JavaScript.

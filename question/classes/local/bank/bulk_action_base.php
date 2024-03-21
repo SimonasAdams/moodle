@@ -70,6 +70,17 @@ abstract class bulk_action_base {
     }
 
     /**
+     * Override with the module component/amdmodule if you want to load some javascript.
+     * Javascript must implement a function named 'init'.
+     *
+     * @return string|null
+     */
+
+    public function get_bulk_action_amd(): ?string {
+        return null;
+    }
+
+    /**
      * A unique key for the bulk action, this will be used in the api to identify the action data.
      * Every bulk must have a unique key to perform the action as a part of the form post in the base view.
      * When questions are selected, it will post according to the key its selected from the dropdown.
