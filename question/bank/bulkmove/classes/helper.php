@@ -33,7 +33,8 @@ class helper {
      * @param \stdClass $tocategory the category where the questions will be moved to.
      */
     public static function bulk_move_questions(string $movequestionselected, \stdClass $tocategory): void {
-        global $DB;
+        global $DB, $CFG;
+        require_once $CFG->libdir .'/questionlib.php';
         if ($questionids = explode(',', $movequestionselected)) {
             list($usql, $params) = $DB->get_in_or_equal($questionids);
             $sql = "SELECT q.*, c.contextid
@@ -52,7 +53,7 @@ class helper {
     }
 
     /**
-     *  MDL-71378 - TODO deprecate or use to return the open instances
+     *  MDL-71378 - TODO open deprecate tracker
      * Get the display data for the move form.
      *
      * @param array $addcontexts the array of contexts to be considered in order to render the category select menu.
@@ -61,12 +62,73 @@ class helper {
      * @return array the data to be rendered in the mustache where it contains the dropdown, move url and return url.
      */
     public static function get_displaydata(array $addcontexts, \moodle_url $moveurl, \moodle_url $returnurl): array {
+
+        debugging('qbank_bulkmove::get_displaydata is deprecated, and has been replaced by a modal and webservice.
+         See qbank_bulkmove/repository and qbank_bulkmove\external\move_questions', DEBUG_DEVELOPER);
+
         $displaydata = [];
         $displaydata ['categorydropdown'] = \qbank_managecategories\helper::question_category_select_menu($addcontexts,
             false, 0, '', -1, true);
         $displaydata ['moveurl'] = $moveurl;
         $displaydata['returnurl'] = $returnurl;
         return $displaydata;
+    }
+
+    /**
+     * @param iterable $iterable
+     * @param int $currentcategoryid
+     * @param int $currentbankcontextid
+     * @return array[] for use by \qbank_bulkmove\output\renderer::render_bulk_move_form
+     */
+    public static function format_for_display(iterable $iterable, int $currentcategoryid, int $currentbankcontextid) {
+        $currentbank = [];
+        $currentcategory = [];
+        $formattedbanks = [];
+        $formattedcategories = [];
+
+        foreach ($iterable as $item) {
+            $formattedbank = [
+                    'id' => $item->cminfo->context->id,
+                    'name' => $item->bankname,
+            ];
+
+            foreach ($item->questioncategories as $questioncategory) {
+                $formattedcategory = [
+                        'id' => $questioncategory->id,
+                        'name' => $questioncategory->name,
+                        'bankcontextid' => $questioncategory->contextid,
+                        'enabled' => $questioncategory->contextid == $currentbankcontextid ? 'enabled' : 'disabled'
+                ];
+                if ($questioncategory->id == $currentcategoryid) {
+                    $currentcategory = $formattedcategory;
+                } else {
+                    $formattedcategories[] = $formattedcategory;
+                }
+            }
+
+            if ($item->cminfo->context->id == $currentbankcontextid) {
+                $currentbank = $formattedbank;
+            } else {
+                $formattedbanks[] = $formattedbank;
+            }
+        }
+
+        if (!empty($currentbank)) {
+            if (empty($formattedbanks)) {
+                $formattedbanks = $currentbank;
+            } else {
+                array_unshift($formattedbanks, $currentbank);
+            }
+        }
+        if (!empty($currentcategory)) {
+            if (empty($formattedcategories)) {
+                $formattedcategories = $currentcategory;
+            } else {
+                array_unshift($formattedcategories, $currentcategory);
+            }
+        }
+
+        return [$formattedbanks, $formattedcategories];
     }
 
     /**
