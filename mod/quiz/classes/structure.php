@@ -69,6 +69,9 @@ class structure {
     /** @var bool caches the results of can_add_random_question. */
     protected $canaddrandom = null;
 
+    /** @var array an array of question banks course_modules records indexed by their associated contextid */
+    protected array $questionsources = [];
+
     /**
      * Create an instance of this class representing an empty quiz.
      *
@@ -1700,5 +1703,38 @@ class structure {
             $randomslot->set_filter_condition(json_encode($filtercondition));
             $randomslot->insert($addonpage);
         }
+    }
+
+    /**
+     * Populate question_sources with cm records for later reference.
+     * @return void
+     */
+    private function populate_question_sources(): void {
+        global $DB;
+
+        $sql = 'SELECT c.id AS contextid, cm.*
+                  FROM {question_categories} qc
+                  JOIN {context} c ON c.id = qc.contextid
+                  JOIN {course_modules} cm ON cm.id = c.instanceid AND c.contextlevel = ' . CONTEXT_MODULE . '
+              GROUP BY c.id, cm.id';
+        $this->questionsources = $DB->get_records_sql($sql);
+    }
+
+    /**
+     * Get data on the question bank being used by the question in the slot.
+     * @param int $slot slot number
+     * @return stdClass
+     */
+    public function get_source_bank(int $slot): stdClass {
+        $questionid = $this->slotsinorder[$slot]->questionid;
+
+        $this->questionsources[$this->questions[$questionid]->contextid] ?? $this->populate_question_sources();
+
+        $cminfo = \cm_info::create($this->questionsources[$this->questions[$questionid]->contextid]);
+
+        return (object) [
+            'cminfo' => $cminfo,
+            'issharedbank' => plugin_supports('mod', $cminfo->modname, FEATURE_PUBLISHES_QUESTIONS, false),
+        ];
     }
 }
