@@ -186,8 +186,7 @@ if ($message = optional_param('message', '', PARAM_TEXT)) {
     core\notification::add($message, core\notification::SUCCESS);
 }
 
-[$courseopenbanks, ] = \core_question\sharing\helper::get_course_open_instances($course->id);
-[$allopenbanks, ] = \core_question\sharing\helper::get_all_open_instances([$course->id]);
+$allinstancesgen = \core_question\sharing\helper::get_instances(\core_question\sharing\helper::OPEN);
 
 echo $OUTPUT->header();
 // Initialise the JavaScript.
@@ -209,7 +208,7 @@ $PAGE->requires->js_call_amd('core_question/question_engine');
 // Questions wrapper start.
 echo html_writer::start_tag('div', ['class' => 'mod-quiz-edit-content']);
 
-echo $output->edit_page($quizobj, $structure, $contexts, $thispageurl, $pagevars, $courseopenbanks, $allopenbanks);
+echo $output->edit_page($quizobj, $structure, $contexts, $thispageurl, $pagevars, $allinstancesgen);
 
 // Questions wrapper end.
 echo html_writer::end_tag('div');
