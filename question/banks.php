@@ -51,8 +51,8 @@ $allcaps = [
         'moodle/question:managecategory'
 ];
 
-[$openbanks, ] = helper::get_course_open_instances($course->id, $allcaps);
-$closedbanks = helper::get_course_closed_instances($course->id, $allcaps);
+$openbanksgenerator = question_bank_helper::get_instances(question_bank_helper::OPEN, [$course->id], [], $allcaps);
+$closedbanksgenerator = question_bank_helper::get_instances(question_bank_helper::CLOSED, [$course->id], [], $allcaps);
 
 $pageurl = new moodle_url('/question/banks.php', ['courseid' => $course->id]);
 $PAGE->set_url($pageurl);
@@ -85,9 +85,9 @@ echo $output->heading(get_string('banksincourse', 'question'));
 echo $output->render_from_template('core_question/view_banks',
         [
                 'hasopenbanks' => !empty($openbanks),
-                'openbanks' => $openbanksrenderable->export_for_template($output),
+                'openbanks' => $openbanks,
                 'hasclosedbanks' => !empty($closedbanks),
-                'closedbanks' => $closedbanksrenderable->export_for_template($output),
+                'closedbanks' => $closedbanks,
                 'addbanks' => $addbankrenderable->export_for_template($output),
                 'createdefault' => has_capability('moodle/course:manageactivities', context_course::instance($course->id)) ?
                         $createdefaultrenderable->export_for_template($output) : false,
