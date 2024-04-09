@@ -3369,7 +3369,7 @@ function print_grade_menu($courseid, $name, $current, $includenograde=true, $ret
  *
  * @param array $contexts The context objects.
  * @return object|null The default category - the category in the first module context supplied in $contexts
- * @deprecated since 4.5.question_make_default_category
+ * @deprecated since Moodle 4.5
  */
 function question_make_default_categories(array $contexts): ?object {
     debugging(
