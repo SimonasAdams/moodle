@@ -11,12 +11,15 @@ Feature: Attempt a quiz with multiple grades
     And the following "courses" exist:
       | fullname | shortname |
       | Course 1 | C1        |
+    And the following "activities" exist:
+      | activity | name    | intro              | course | idnumber |
+      | qbank    | Qbank 1 | Question bank 1    | C1     | qbank1   |
     And the following "course enrolments" exist:
       | user    | course | role    |
       | student | C1     | student |
     And the following "question categories" exist:
-      | contextlevel | reference | name           |
-      | Course       | C1        | Test questions |
+      | contextlevel    | reference | name           |
+      | Activity module | qbank1    | Test questions |
     And the following "activities" exist:
       | activity   | name   | course |
       | quiz       | Quiz 1 | C1     |
