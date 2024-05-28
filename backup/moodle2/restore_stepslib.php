@@ -5008,8 +5008,16 @@ class restore_create_categories_and_questions extends restore_structure_step {
         // From 3.5 onwards, all question categories should be a child of a special category called the "top" category.
         $restoretask = $this->get_task();
         $before35 = $restoretask->backup_release_compare('3.5', '<') || $restoretask->backup_version_compare(20180205, '<');
+        //MDL-71378 TODO: handle making a default bank on the course for anything other than module context.
         if (empty($mapping->info->parent) && $before35) {
-            $top = question_get_top_category($data->contextid, true);
+            if ($context->contextlevel === CONTEXT_COURSE) {
+                $course = get_course($context->instanceid);
+                $defaultbank = \core_question\sharing\helper::get_default_open_instance_system_type($course, true);
+                $bankcontextid = $defaultbank->context->id;
+            } else {
+                $bankcontextid = $data->contextid;
+            }
+            $top = question_get_top_category($bankcontextid, true);
             $data->parent = $top->id;
         }
 
