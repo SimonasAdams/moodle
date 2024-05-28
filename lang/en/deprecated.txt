@@ -115,3 +115,5 @@ modulenotexist,core_debug
 coursecalendar,core_calendar
 datechanged,core
 configgeneralquestionbank,core_backup
+cannotdeletecategoryquestions,core_error
+errordeletingquestionsfromcategory,core_question

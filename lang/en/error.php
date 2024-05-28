@@ -657,3 +657,6 @@ $string['prefixtoolong'] = '<p>Error: database table prefix is too long ({$a->db
 // Deprecated since Moodle 4.4.
 $string['cannotmarktopic'] = 'Could not mark that section for this course';
 $string['unknownhelp'] = 'Unknown help section {$a}';
+
+// Deprecated since Moodle 4.5.
+$string['cannotdeletecategoryquestions'] = 'Could not delete questions from category \'{$a}\'';
