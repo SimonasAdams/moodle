@@ -17,11 +17,16 @@ Feature: Edit quiz page - adding things
     And the following "activities" exist:
       | activity   | name    | intro                                     | course | idnumber  |
       | quiz       | Quiz 1  | Quiz 1 for testing the Add menu           | C1     | quiz1     |
-      | qbank      | Qbank 1 | Question bank 1 for testing the Add menu  | C1     | qbank1    |
     And I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
 
   @javascript
   Scenario: Add some new question to the quiz using '+ a new question' options of the 'Add' menu.
+    Given the following "activities" exist:
+      | activity   | name    | intro                                     | course | idnumber  |
+      | qbank      | Qbank 1 | Question bank 1 for testing the Add menu  | C1     | qbank1    |
+    And the following "question categories" exist:
+      | contextlevel    | reference | name           |
+      | Activity module | qbank1    | Test questions |
     When I open the "last" add to quiz menu
     And I follow "a new question"
     And I set the field "item_qtype_essay" to "1"
@@ -99,19 +104,24 @@ Feature: Edit quiz page - adding things
       add questions from question bank to the quiz, first we create some new questions
       in various categories and add them to the question bank.
 
-    # MDL-71378 TODO: see where this url is being created question/bank/managecategories/category.php for courses as this is now deprecated.
     # Create a couple of sub categories.
-    When I am on the "Course 1" "core_question > course question categories" page
+    Given the following "activities" exist:
+      | activity   | name    | intro                                     | course | idnumber  |
+      | qbank      | Qbank 1 | Question bank 1 for testing the Add menu  | C1     | qbank1    |
+    And the following "question categories" exist:
+      | contextlevel    | reference | name           |
+      | Activity module | qbank1    | Test questions |
+    When I am on the "Qbank 1" "core_question > question categories" page
     Then I should see "Add category"
     And I follow "Add category"
-    Then I set the field "Parent category" to "Default for Bank 1"
+    Then I set the field "Parent category" to "Test questions"
     And I set the field "Name" to "Subcat 1"
     And I set the field "Category info" to "This is sub category 1"
     And I press "id_submitbutton"
     And I should see "Subcat 1"
 
     And I follow "Add category"
-    Then I set the field "Parent category" to "Default for C1"
+    Then I set the field "Parent category" to "Test questions"
     And I set the field "Name" to "Subcat 2"
     And I set the field "Category info" to "This is sub category 2"
     And I press "id_submitbutton"
@@ -184,6 +194,8 @@ Feature: Edit quiz page - adding things
     And I open the "last" add to quiz menu
     And I follow "from question bank"
     Then the "Add selected questions to the quiz" "button" should be disabled
+    Then I click on "Switch to another bank" "button"
+    And I click on "Qbank 1" "link" in the ".course-open-banks" "css_element"
     And I click on "Select" "checkbox" in the "Essay 03" "table_row"
     Then the "Add selected questions to the quiz" "button" should be enabled
     And I click on "Add to quiz" "link" in the "Essay 03" "table_row"
@@ -192,6 +204,8 @@ Feature: Edit quiz page - adding things
     # Add Essay 01 from question bank.
     And I open the "Page 1" add to quiz menu
     And I follow "from question bank"
+    Then I click on "Switch to another bank" "button"
+    And I click on "Qbank 1" "link" in the ".course-open-banks" "css_element"
     And I click on "Add to quiz" "link" in the "Essay 01" "table_row"
     And I should see "Essay 03" on quiz page "1"
     And I should see "Essay 01" on quiz page "1"
@@ -199,6 +213,8 @@ Feature: Edit quiz page - adding things
     # Add Esay 02 from question bank.
     And I open the "Page 1" add to quiz menu
     And I follow "from question bank"
+    Then I click on "Switch to another bank" "button"
+    And I click on "Qbank 1" "link" in the ".course-open-banks" "css_element"
     And I click on "Add to quiz" "link" in the "Essay 02" "table_row"
     And I should see "Essay 03" on quiz page "1"
     And I should see "Essay 01" on quiz page "1"
@@ -242,8 +258,8 @@ Feature: Edit quiz page - adding things
   @accessibility @javascript
   Scenario: Check the accessibility of the quiz questions page
     Given the following "question categories" exist:
-      | contextlevel | reference | name           |
-      | Course       | C1        | Test questions |
+      | contextlevel    | reference | name           |
+      | Activity module | quiz1     | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype     | name           | questiontext              |
       | Test questions   | truefalse | First question | Answer the first question |

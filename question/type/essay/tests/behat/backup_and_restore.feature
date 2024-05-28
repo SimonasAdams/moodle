@@ -8,17 +8,19 @@ Feature: Test duplicating a quiz containing an Essay question
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1        | 0        |
+    And the following "activities" exist:
+      | activity   | name      | course | idnumber |
+      | quiz       | Test quiz | C1     | quiz1    |
+      | qbank      | Qbank 1   | C1     | qbank1   |
     And the following "question categories" exist:
-      | contextlevel | reference | name           |
-      | Course       | C1        | Test questions |
+      | contextlevel    | reference | name           |
+      | Activity module | qbank1    | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype     | name      | template         |
       | Test questions   | essay     | essay-001 | editor           |
       | Test questions   | essay     | essay-002 | editorfilepicker |
       | Test questions   | essay     | essay-003 | plain            |
-    And the following "activities" exist:
-      | activity   | name      | course | idnumber |
-      | quiz       | Test quiz | C1     | quiz1    |
+
     And quiz "Test quiz" contains the following questions:
       | essay-001 | 1 |
       | essay-002 | 1 |
@@ -34,7 +36,9 @@ Feature: Test duplicating a quiz containing an Essay question
     And I restore "test_backup.mbz" backup into a new course using this options:
       | Schema | Course name       | Course 2 |
       | Schema | Course short name | C2       |
-    And I am on the "Course 2" "core_question > course question bank" page
+    And I navigate to "Question banks" in current page administration
+    And I click on "Qbank 1" "link"
+    And I apply question bank filter "Category" with value "Test questions"
     Then I should see "essay-001"
     And I should see "essay-002"
     And I should see "essay-003"

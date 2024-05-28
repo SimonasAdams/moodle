@@ -1120,9 +1120,10 @@ class questionlib_test extends \advanced_testcase {
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
         // Create a Course.
         $course = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course->id);
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = \context_module::instance($qbank->cmid);
 
-        $top = question_get_top_category($coursecontext->id, true);
+        $top = question_get_top_category($bankcontext->id, true);
         $cat1 = $questiongenerator->create_question_category(['parent' => $top->id]);
         $sub11 = $questiongenerator->create_question_category(['parent' => $cat1->id]);
         $sub12 = $questiongenerator->create_question_category(['parent' => $cat1->id]);
@@ -1153,16 +1154,18 @@ class questionlib_test extends \advanced_testcase {
 
         // Create a category tree.
         $course = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course->id);
+        $qbank1 = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bank1context = \context_module::instance($qbank1->cmid);
+        $qbank2 = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
         /** @var \core_question_generator $questiongenerator */
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $context = \context_system::instance();
+        $wrongcontext = \context_module::instance($qbank2->cmid);
 
-        $top = question_get_top_category($coursecontext->id, true);
+        $top = question_get_top_category($bank1context->id, true);
         $cat1 = $questiongenerator->create_question_category(['parent' => $top->id]);
         $sub11 = $questiongenerator->create_question_category(['parent' => $cat1->id]);
         $sub12 = $questiongenerator->create_question_category(['parent' => $cat1->id]);
-        $cat2 = $questiongenerator->create_question_category(['parent' => $top->id, 'contextid' => $context->id]);
+        $cat2 = $questiongenerator->create_question_category(['parent' => $top->id, 'contextid' => $wrongcontext->id]);
         $sub22 = $questiongenerator->create_question_category(['parent' => $cat2->id]);
 
         // Test - returned array has keys and values the same.
@@ -1207,15 +1210,19 @@ class questionlib_test extends \advanced_testcase {
         $generator = $this->getDataGenerator();
         /** @var \core_question_generator $questiongenerator */
         $questiongenerator = $generator->get_plugin_generator('core_question');
-        $category = $generator->create_category();
-        $context = \context_coursecat::instance($category->id);
+        $course = $generator->create_course();
+        $qbank1 = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bank1context = \context_module::instance($qbank1->cmid);
+        $qbank2 = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bank2context = \context_module::instance($qbank2->cmid);
+
         // Create a top category.
-        $cat0 = question_get_top_category($context->id, true);
+        $cat0 = question_get_top_category($bank1context->id, true);
         // Add sub-categories - but in a different context.
         $cat1 = $questiongenerator->create_question_category(
-            ['parent' => $cat0->id, 'contextid' => \context_system::instance()->id]);
+            ['parent' => $cat0->id, 'contextid' => $bank2context->id]);
         $cat2 = $questiongenerator->create_question_category(
-            ['parent' => $cat1->id, 'contextid' => \context_system::instance()->id]);
+            ['parent' => $cat1->id, 'contextid' => $bank2context->id]);
 
         // Test the 'get parents' function only returns categories in the same context.
         $this->assertEquals([$cat1->id], question_categorylist_parents($cat2->id));

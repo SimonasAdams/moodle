@@ -176,6 +176,13 @@ function question_context_has_any_questions($context): bool {
     } else {
         throw new moodle_exception('invalidcontextinhasanyquestions', 'question');
     }
+
+    $context = context::instance_by_id($contextid);
+
+    if ($context->contextlevel !== CONTEXT_MODULE) {
+        return false;
+    }
+
     $sql = 'SELECT qbe.*
               FROM {question_bank_entries} qbe
               JOIN {question_categories} qc ON qc.id = qbe.questioncategoryid
@@ -1045,7 +1052,7 @@ function question_get_default_category($contextid) {
 
     $context = \core\context::instance_by_id($contextid);
     if ($context->contextlevel !== CONTEXT_MODULE) {
-        debugging("Invalid context level {$context->contextlevel} for default category. Please use CONTEXT_MODULE");
+        debugging("Invalid context level {$context->contextlevel} for default category. Please use CONTEXT_MODULE", DEBUG_DEVELOPER);
         return false;
     }
 
@@ -1072,7 +1079,8 @@ function question_get_top_category($contextid, $create = false) {
 
     $context = context::instance_by_id($contextid);
     if ($context->contextlevel !== CONTEXT_MODULE) {
-        throw new moodle_exception("Invalid context level: {$context->contextlevel}, must be CONTEXT_MODULE");
+        debugging("Invalid context level: {$context->contextlevel} for question_get_top_category, must be CONTEXT_MODULE", DEBUG_DEVELOPER);
+        return false;
     }
 
     if (!$category && $create) {
@@ -1366,7 +1374,8 @@ function question_edit_url($context) {
     }
 
     if ($context->contexlevel !== CONTEXT_MODULE) {
-        throw new moodle_exception("Invalid contextlevel: {$context->contextlevel} provided.");
+        debugging("Invalid contextlevel: {$context->contextlevel} provided for question_edit_url, must be CONTEXT_MODULE", DEBUG_DEVELOPER);
+        return false;
     }
 
     $baseurl = $CFG->wwwroot . '/question/edit.php?';
