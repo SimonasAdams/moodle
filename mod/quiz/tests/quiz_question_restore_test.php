@@ -160,6 +160,7 @@ class quiz_question_restore_test extends \advanced_testcase {
      */
     public function test_quiz_duplicate_does_not_duplicate_course_question_bank_questions() {
         $this->resetAfterTest();
+        $this->markTestSkipped("MDL-71378 TODO: remove this test as no longer relevant?");
         $quiz = $this->create_test_quiz($this->course);
         // Test for questions from a different context.
         $context = \context_course::instance($this->course->id);

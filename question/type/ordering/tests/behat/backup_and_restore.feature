@@ -8,9 +8,12 @@ Feature: Test duplicating a quiz containing a Ordering question
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1        | 0        |
+    And the following "activities" exist:
+      | activity   | name      | course | idnumber |
+      | qbank      | Qbank 1   | C1     | qbank1   |
     And the following "question categories" exist:
-      | contextlevel | reference | name           |
-      | Course       | C1        | Test questions |
+      | contextlevel    | reference | name           |
+      | Activity module | qbank1    | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype    | name   | template |
       | Test questions   | ordering | Moodle | moodle   |
@@ -30,7 +33,9 @@ Feature: Test duplicating a quiz containing a Ordering question
     And I restore "test_backup.mbz" backup into a new course using this options:
       | Schema | Course name       | Course 2 |
       | Schema | Course short name | C2       |
-    And I am on the "Course 2" "core_question > course question bank" page
+    And I navigate to "Question banks" in current page administration
+    And I click on "Qbank 1" "link"
+    And I apply question bank filter "Category" with value "Test questions"
     And I choose "Edit question" action for "Moodle" in the question bank
     Then the following fields match these values:
       | Question name                      | Moodle |
