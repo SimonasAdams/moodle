@@ -16,6 +16,8 @@
 
 namespace qbank_bulkmove;
 
+use moodle_exception;
+
 /**
  * Class bulk_move_action is the base class for moving questions.
  *
@@ -45,7 +47,24 @@ class bulk_move_action extends \core_question\local\bank\bulk_action_base {
         ];
     }
 
-    public function get_bulk_action_amd(): ?string {
-        return 'qbank_bulkmove/modal_question_bank_bulkmove';
+    /**
+     * @param $params
+     * @return void
+     */
+    public function initialise_javascript($params = []): void {
+        global $PAGE;
+
+        if (empty($params['contextid'] || empty($params['categoryid']))) {
+            throw new moodle_exception('contextid or categoryid cannot be empty');
+        }
+
+        $PAGE->requires->js_call_amd(
+                'qbank_bulkmove/modal_question_bank_bulkmove',
+                'init',
+                [
+                        'contextid' => $params['contextid'],
+                        'categoryid' => $params['categoryid']
+                ]
+        );
     }
 }
