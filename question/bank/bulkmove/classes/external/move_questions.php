@@ -28,6 +28,7 @@ use core\context;
 use core\notification;
 use core_external\external_function_parameters;
 use core_external\external_value;
+use core_question\local\bank\filter_condition_manager;
 use moodle_url;
 
 class move_questions extends \core_external\external_api {
@@ -77,15 +78,22 @@ class move_questions extends \core_external\external_api {
         }
 
         \qbank_bulkmove\helper::bulk_move_questions($movequestionselected, $targetcategory);
-
-        $returnfilters = \core_question\local\bank\filter_condition_manager::update_filter_param_to_category(
-                $returnurl->param('filter'),
-                $targetcategoryid,
-        );
+        $filter = $returnurl->param('filter');
+        if ($filter) {
+            $returnfilters = filter_condition_manager::update_filter_param_to_category(
+                    $filter,
+                    $targetcategoryid,
+            );
+        } else {
+            $returnfilters = json_encode(
+                    filter_condition_manager::get_default_filter("{$targetcategoryid},{$targetcontextid}"),
+                    JSON_THROW_ON_ERROR
+            );
+        }
 
         $returnurl->param('filter', $returnfilters);
 
         notification::success(get_string('questionsmoved', 'qbank_bulkmove'));
-        return $returnurl->out();
+        return $returnurl->out(false);
     }
 }

@@ -70,14 +70,12 @@ abstract class bulk_action_base {
     }
 
     /**
-     * Override with the module component/amdmodule if you want to load some javascript.
-     * Javascript must implement a function named 'init'.
+     * Override if you want to load your own javascript.
      *
-     * @return string|null
+     * @param array $params initialise the javascript with any params it needs.
+     * @return void
      */
-    public function get_bulk_action_amd(): ?string {
-        return null;
-    }
+    public function initialise_javascript(array $params = []): void {}
 
     /**
      * @deprecated since Moodle 4.0
