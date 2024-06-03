@@ -71,6 +71,7 @@ export default class ModalQuestionBankBulkmove extends Modal {
         this.setTargetCategoryId(modalConfig.categoryId);
         this.setCurrentCategoryId(modalConfig.categoryId);
         this.setReturnUrl(modalConfig.returnUrl);
+        modalConfig.removeOnClose = true;
         super.configure(modalConfig);
     }
 
