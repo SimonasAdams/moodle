@@ -36,6 +36,7 @@ Feature: The questions in the question bank can be filtered by combine various c
   @javascript
   Scenario: The questions can be filtered by matching all conditions
     When I apply question bank filter "Category" with value "Test questions 1"
+    And I change window size to "large"
     And I apply question bank filter "Tag" with value "foo"
     Then I should see "question 1 name" in the "categoryquestions" "table"
     And I should not see "question 2 name" in the "categoryquestions" "table"

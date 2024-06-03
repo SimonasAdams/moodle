@@ -31,7 +31,7 @@ Feature: A teacher can pagimate through question bank questions
 
   Scenario: Questions can be paginated
     When I am on the "Qbank 1" "core_question > question bank" page logged in as "teacher1"
-    When I apply question bank filter "Category" with value "Qbank 1"
+    When I apply question bank filter "Category" with value "Top for Qbank 1"
     And I follow "Sort by Question name ascending"
     And I follow "Sort by Question name descending"
     And I should see "Tests question 1"

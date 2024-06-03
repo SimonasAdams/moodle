@@ -64,6 +64,7 @@ Feature: The questions in the question bank can be sorted in various ways
 
   @javascript
   Scenario: The question text can be shown in the list of questions
+    And I change window size to "large"
     When I set the field "Show question text in the question list?" to "Yes"
     Then I should see "Question 1 text"
     And I should see "Question 2 text"
