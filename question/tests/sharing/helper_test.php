@@ -216,7 +216,7 @@ class helper_test extends \advanced_testcase {
         $qbank = question_bank_helper::get_default_open_instance_system_type($course);
         $this->assertFalse($qbank);
         $qbank = question_bank_helper::get_default_open_instance_system_type($course, true);
-        $this->assertEquals("{$course->fullname} system bank", $qbank->get_name());
+        $this->assertEquals(get_string('systembank', 'mod_qbank'), $qbank->get_name());
         $modrecord = $DB->get_record('qbank', ['id' => $qbank->instance]);
         $this->assertEquals(question_bank_helper::SYSTEM, $modrecord->type);
     }

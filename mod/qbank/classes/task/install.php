@@ -25,31 +25,30 @@
 
 namespace mod_qbank\task;
 
-use context_module;
 use context_system;
 use core\context;
 use core\task\adhoc_task;
+use core\task\manager;
 use core_course_category;
 use core_question\local\bank\question_bank_helper;
 use Throwable;
 
+/**
+ * This script transfers question categories at CONTEXT_SITE, CONTEXT_COURSE, & CONTEXT_COURSECAT to a new qbank instance
+ * context.
+ *
+ * Firstly, it finds any question categories where questions are not being used and deletes them, including questions.
+ *
+ * Then for any remaining, if it is at course level context, it creates a mod_qbank instance taking the course name
+ * and moves the category there including subcategories, files and tags.
+ *
+ * If the original question category context was a course category context, then it creates a course in that category,
+ * taking the category name. Then it creates a mod_qbank instance in that course and moves the category & sub categories
+ * there, along with files and tags belonging to those categories.
+ *
+ */
 class install extends adhoc_task {
 
-    /**
-     * This script transfers question categories at CONTEXT_SITE, CONTEXT_COURSE, & CONTEXT_COURSECAT to a new qbank instance
-     * context.
-     *
-     * Firstly, it finds any question categories where questions are not being used and deletes them, including questions.
-     *
-     * Then for any remaining, if it is at course level context, it creates a mod_qbank instance taking the course name
-     * and moves the category there including subcategories, files and tags.
-     *
-     * If the original question category context was a course category context, then it creates a course in that category,
-     * taking the category name. Then it creates a mod_qbank instance in that course and moves the category & sub categories
-     * there, along with files and tags belonging to those categories.
-     *
-     * @inheritDoc
-     */
     public function execute() {
 
         global $DB, $CFG;
@@ -91,17 +90,17 @@ class install extends adhoc_task {
                 switch ($oldcontext->contextlevel) {
                     case CONTEXT_SYSTEM:
                         $course = get_site();
-                        $bankname = 'System shared question bank';
+                        $bankname = get_string('systembank', 'mod_qbank');
                         break;
                     case CONTEXT_COURSECAT:
                         $coursecategory = core_course_category::get($oldcontext->instanceid);
                         $courseshortname = "{$coursecategory->name}-{$coursecategory->id}";
                         $course = $this->create_course($coursecategory, $courseshortname);
-                        $bankname = "{$coursecategory->name} shared question bank";
+                        $bankname = get_string("sharedbank", "mod_qbank", $coursecategory->name);
                         break;
                     case CONTEXT_COURSE:
                         $course = get_course($oldcontext->instanceid);
-                        $bankname = "{$course->shortname} shared question bank";
+                        $bankname = get_string("sharedbank", "mod_qbank", $course->shortname);
                         break;
                     default:
                         // This shouldn't be possible, so we can't really transfer it.
@@ -131,7 +130,7 @@ class install extends adhoc_task {
     private function create_course(object $coursecategory, string $shortname): object {
         $data = (object) [
                 'enablecompletion' => 0,
-                'fullname' => "Shared teaching resources for Category: {$coursecategory->name}",
+                'fullname' => get_string('coursecategory', 'mod_qbank', $coursecategory->name),
                 'shortname' => $shortname,
                 'category' => $coursecategory->id,
         ];
@@ -148,5 +147,17 @@ class install extends adhoc_task {
 
         // Move the parent from the old top category to the new one.
         $DB->set_field('question_categories', 'parent', $newtopcategory->id, ['parent' => $oldtopcategory->id]);
+    }
+
+    /**
+     * TODO: Remove this method and calling code in a few major versions time once we know all sites have upgraded.
+     * This task should only ever be called once, on install/upgrade. But we may need to warn the user on some pages
+     * that some banks may not have been transferred yet if it failed or hasn't yet completed.
+     *
+     * @return bool
+     */
+    public static function has_completed_successfully(): bool {
+        $task = manager::get_adhoc_tasks(self::class);
+        return empty($task);
     }
 }

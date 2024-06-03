@@ -78,6 +78,9 @@ $createdefaultrenderable = new \single_button(
 );
 
 echo $output->header();
+if (!\mod_qbank\task\install::has_completed_successfully()) {
+    echo $output->notification(get_string('installnotfinished', 'mod_qbank'), \core\output\notification::NOTIFY_WARNING);
+}
 echo $output->heading(get_string('banksincourse', 'question'));
 echo $output->render_from_template('core_question/view_banks',
         [

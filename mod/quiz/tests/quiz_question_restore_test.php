@@ -320,7 +320,7 @@ class quiz_question_restore_test extends \advanced_testcase {
         $qbanks = $modinfo->get_instances_of('qbank');
         $this->assertCount(1, $qbanks);
         $qbank = reset($qbanks);
-        $this->assertEquals('Course restore system bank', $qbank->name);
+        $this->assertEquals(get_string('systembank', 'mod_qbank'), $qbank->name);
         $quiz = array_values($modinfo->get_instances_of('quiz'))[0];
         $quizobj = \mod_quiz\quiz_settings::create($quiz->instance);
         $structure = structure::create_for_quiz($quizobj);

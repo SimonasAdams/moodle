@@ -169,7 +169,7 @@ if ($mform->is_cancelled()) {
         $activityurl = new moodle_url("/mod/$module->name/view.php", $urlparams);
         redirect($activityurl);
     } else if (plugin_supports('mod', $module->name, FEATURE_PUBLISHES_QUESTIONS)) {
-        redirect(new moodle_url("/question/banks.php", ['courseid' => $course->id]));
+        redirect(\core_question\local\bank\question_bank_helper::get_url_for_qbank_list($course->id));
     } else {
         $options = [];
         if (!is_null($sectionreturn)) {
