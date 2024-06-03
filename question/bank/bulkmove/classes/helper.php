@@ -75,63 +75,6 @@ class helper {
     }
 
     /**
-     * @param iterable $iterable
-     * @param int $currentcategoryid
-     * @param int $currentbankcontextid
-     * @return array[] for use by \qbank_bulkmove\output\renderer::render_bulk_move_form
-     */
-    public static function format_for_display(iterable $iterable, int $currentcategoryid, int $currentbankcontextid) {
-        $currentbank = [];
-        $currentcategory = [];
-        $formattedbanks = [];
-        $formattedcategories = [];
-
-        foreach ($iterable as $item) {
-            $formattedbank = [
-                    'id' => $item->cminfo->context->id,
-                    'name' => $item->bankname,
-            ];
-
-            foreach ($item->questioncategories as $questioncategory) {
-                $formattedcategory = [
-                        'id' => $questioncategory->id,
-                        'name' => $questioncategory->name,
-                        'bankcontextid' => $questioncategory->contextid,
-                        'enabled' => $questioncategory->contextid == $currentbankcontextid ? 'enabled' : 'disabled'
-                ];
-                if ($questioncategory->id == $currentcategoryid) {
-                    $currentcategory = $formattedcategory;
-                } else {
-                    $formattedcategories[] = $formattedcategory;
-                }
-            }
-
-            if ($item->cminfo->context->id == $currentbankcontextid) {
-                $currentbank = $formattedbank;
-            } else {
-                $formattedbanks[] = $formattedbank;
-            }
-        }
-
-        if (!empty($currentbank)) {
-            if (empty($formattedbanks)) {
-                $formattedbanks = $currentbank;
-            } else {
-                array_unshift($formattedbanks, $currentbank);
-            }
-        }
-        if (!empty($currentcategory)) {
-            if (empty($formattedcategories)) {
-                $formattedcategories = $currentcategory;
-            } else {
-                array_unshift($formattedcategories, $currentcategory);
-            }
-        }
-
-        return [$formattedbanks, $formattedcategories];
-    }
-
-    /**
      * Process the question came from the form post.
      *
      * @param array $rawquestions raw questions came as a part of post.

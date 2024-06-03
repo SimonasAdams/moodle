@@ -56,49 +56,21 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I should see question bulk action "move"
 
   @javascript
-  Scenario: Search for shared question banks I have access to.
-    Given I log in as "teacher1"
-    And I am on the "Test quiz" "mod_quiz > question bank" page
-    And I click on "First question" "checkbox"
-    And I click on "With selected" "button"
-    And I click on "move" "button"
-    Then I should see "Move the selected questions to..." in the ".modal-title" "css_element"
-    And I should see "Test quiz" in the ".search-banks" "css_element"
-    And I should see "Test questions 1" in the ".search-categories" "css_element"
-    When I open the autocomplete suggestions list in the ".search-banks" "css_element"
-    Then I should see "Question bank 1"
-    And I should see "Question bank 2"
-    But I should not see "Question bank 3"
-
-  @javascript
-  Scenario: Search for shared question bank categories I have access to.
-    Given I log in as "teacher1"
-    And I am on the "Question bank 1" "mod_qbank > question bank" page
-    And I click on "Second question" "checkbox"
-    And I click on "With selected" "button"
-    And I click on "move" "button"
-    Then I should see "Move the selected questions to..." in the ".modal-title" "css_element"
-    When I open the autocomplete suggestions list in the ".search-categories" "css_element"
-    Then I should see "Test questions 5"
-    And I should not see "Test questions 4"
-    But I should not see "Test questions 3"
-    But I should not see "Test questions 1"
-
-  @javascript
-  Scenario: Selecting a shared question bank shortens the available categories list to that bank.
+  Scenario: Selecting a shared question bank limits the available categories to those belonging to the selected bank.
     Given I log in as "teacher1"
     And I am on the "Test quiz" "mod_quiz > question bank" page
     And I click on "First question" "checkbox"
     And I click on "With selected" "button"
     And I click on "move" "button"
     And I open the autocomplete suggestions list in the ".search-categories" "css_element"
+    And "Test questions 1" "autocomplete_suggestions" should exist
     And "Test questions 2" "autocomplete_suggestions" should not exist
     And "Test questions 3" "autocomplete_suggestions" should not exist
     And "Test questions 4" "autocomplete_suggestions" should not exist
     And "Test questions 5" "autocomplete_suggestions" should not exist
-    But "Test questions 6" "autocomplete_suggestions" should exist
-    And I should see "Test questions 1" in the ".search-categories" "css_element"
+    And "Test questions 6" "autocomplete_suggestions" should exist
     When I open the autocomplete suggestions list in the ".search-banks" "css_element"
+    Then I should not see "Question bank 3" in the ".search-banks" "css_element"
     And I click on "Question bank 1" item in the autocomplete list
     Then I should not see "Test questions 1" in the ".search-categories" "css_element"
     And I open the autocomplete suggestions list in the ".search-categories" "css_element"

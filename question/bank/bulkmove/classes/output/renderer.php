@@ -27,12 +27,17 @@ namespace qbank_bulkmove\output;
 class renderer extends \plugin_renderer_base {
 
     /**
+     * MDL-71378 - TODO open deprecate tracker
      * Render bulk move.
      *
      * @param array $displaydata
      * @return string
      */
     public function render_bulk_move_form($displaydata) {
+
+        debugging('qbank_bulkmove\output\renderer::render_bulk_move_form is deprecated, 
+        and has been replaced by qbank_bulkmove\output\bulk_move.', DEBUG_DEVELOPER);
+
         return $this->render_from_template('qbank_bulkmove/bulk_move', $displaydata);
     }
 

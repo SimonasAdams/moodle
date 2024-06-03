@@ -16,7 +16,7 @@
 /**
  * A javascript module to handle question bulkmove ajax actions.
  *
- * @module     qbank_bulkmove/repository
+ * @module     core_question/repository
  * @copyright  2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -37,7 +37,7 @@ export const submitMoveQuestions = (
     moveQuestionsSelected,
     returnUrl
 ) => Ajax.call([{
-    methodname: 'qbank_bulkmove_move_questions',
+    methodname: 'core_question_move_questions',
     args: {
         contextid: contextId,
         categoryid: categoryId,

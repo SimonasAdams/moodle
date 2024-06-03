@@ -21,61 +21,13 @@
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-use core_question\local\bank\question_bank_helper;
 
 function qbank_bulkmove_output_fragment_bulk_move(array $args) {
-    global $PAGE, $DB, $OUTPUT;
+    global $OUTPUT;
 
-    [, $cmrec] = get_module_from_cmid($args['context']->instanceid);
-    $currentbank = cm_info::create($cmrec);
+    $currentbankid = clean_param($args['context']->instanceid, PARAM_INT);
+    $currentcategoryid = clean_param($args['categoryid'], PARAM_INT);
+    $qbank_cat_chooser = new \qbank_bulkmove\output\bulk_move($currentbankid, $currentcategoryid);
 
-    // Get all shared banks and categories and make the current bank/category pre-selected.
-    $openinstancegen = question_bank_helper::get_instances(question_bank_helper::OPEN, [], [], ['moodle/question:add'], true);
-    [$banks, $categories] = \qbank_bulkmove\helper::format_for_display(
-            $openinstancegen,
-            $args['categoryid'],
-            $currentbank->context->id
-    );
-
-    // The current bank is not a shared bank, but grab the category records anyway so that we can at least allow them
-    // to be moved to another local category in the bank.
-    if (!plugin_supports('mod', $currentbank->modname, FEATURE_PUBLISHES_QUESTIONS, false)) {
-        $currentbankcats = $DB->get_records_sql(
-                'SELECT id,name,contextid FROM {question_categories} WHERE parent <> 0 AND contextid = :contextid',
-                ['contextid' => $currentbank->context->id]
-        );
-        $current = new stdClass();
-        $current->bankname = $currentbank->get_formatted_name();
-        $current->cminfo = $currentbank;
-        $current->questioncategories = $currentbankcats;
-        [$quizbank, $quizcategories] = \qbank_bulkmove\helper::format_for_display(
-                [$current],
-                $args['categoryid'],
-                $currentbank->context->id
-        );
-        array_unshift($banks, $quizbank);
-        $quizcategories = array_reverse($quizcategories);
-        foreach ($quizcategories as $quizcategory) {
-            array_unshift($categories, $quizcategory);
-        }
-    }
-
-    $savebutton = new single_button(
-            new moodle_url('#'),
-            get_string('movequestions', 'qbank_bulkmove'),
-            'post',
-            single_button::BUTTON_PRIMARY,
-            [
-                    'data-action' => 'bulkmovesave',
-                    'disabled' => 'disabled'
-            ]
-    );
-
-    return $PAGE->get_renderer('qbank_bulkmove')->render_bulk_move_form(
-            [
-                    'allopenbanks' => $banks,
-                    'allcategories' => $categories,
-                    'save' => $savebutton->export_for_template($OUTPUT),
-            ]
-    );
+    return $OUTPUT->render($qbank_cat_chooser);
 }
