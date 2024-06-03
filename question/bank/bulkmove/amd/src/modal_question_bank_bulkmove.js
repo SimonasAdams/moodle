@@ -49,14 +49,13 @@ export default class ModalQuestionBankBulkmove extends Modal {
         CANCEL_BUTTON: '.bulk-move-footer button[data-action="cancel"]'
     };
 
-    static init(contextId, params, categoryId, returnUrl) {
+    static init(contextId, categoryId) {
         document.addEventListener('click', (e) => {
             const trigger = e.target;
             if (trigger.className === 'dropdown-item' && trigger.getAttribute('name') === 'move') {
                 e.preventDefault();
                 ModalQuestionBankBulkmove.create({
                     contextId,
-                    returnUrl,
                     title: getString('bulkmoveheader', 'qbank_bulkmove'),
                     show: true,
                     categoryId: categoryId,
@@ -70,7 +69,7 @@ export default class ModalQuestionBankBulkmove extends Modal {
         this.setTargetBankContextId(modalConfig.contextId);
         this.setTargetCategoryId(modalConfig.categoryId);
         this.setCurrentCategoryId(modalConfig.categoryId);
-        this.setReturnUrl(modalConfig.returnUrl);
+        modalConfig.removeOnClose = true;
         super.configure(modalConfig);
     }
 
@@ -114,20 +113,6 @@ export default class ModalQuestionBankBulkmove extends Modal {
      */
     getCurrentCategoryId() {
         return this.currentCategoryId;
-    }
-
-    /**
-     * @param {string} returnUrl
-     */
-    setReturnUrl(returnUrl) {
-        this.returnUrl = returnUrl;
-    }
-
-    /**
-     * @return {string} returnUrl
-     */
-    getReturnUrl() {
-        return this.returnUrl;
     }
 
     /**
@@ -349,7 +334,7 @@ export default class ModalQuestionBankBulkmove extends Modal {
                 targetContextId,
                 targetCategoryId,
                 questionids.join(),
-                this.getReturnUrl()
+                window.location.href
             );
         } catch (error) {
             await Notification.exception(error);
