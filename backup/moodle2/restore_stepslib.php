@@ -5008,7 +5008,11 @@ class restore_create_categories_and_questions extends restore_structure_step {
         // From 3.5 onwards, all question categories should be a child of a special category called the "top" category.
         $restoretask = $this->get_task();
         $before35 = $restoretask->backup_release_compare('3.5', '<') || $restoretask->backup_version_compare(20180205, '<');
-        //MDL-71378 TODO: handle making a default bank on the course for anything other than module context.
+
+        // We need a 'Top' question category for an activity module and activity modules are mapped to CONTEXT_COURSE and moved
+        // to the correct module context in restore_move_module_questions_categories.
+        // As we can't create a 'Top' category in CONTEXT_COURSE we'll make a default
+        // qbank module and map it to that until they are created later.
         if (empty($mapping->info->parent) && $before35) {
             if ($context->contextlevel === CONTEXT_COURSE) {
                 $course = get_course($context->instanceid);
@@ -5021,17 +5025,7 @@ class restore_create_categories_and_questions extends restore_structure_step {
             $data->parent = $top->id;
         }
 
-        if (empty($data->parent)) {
-            if ($context->contextlevel !== CONTEXT_MODULE) {
-                return;
-            }
-            if (!$top = question_get_top_category($data->contextid)) {
-                $top = question_get_top_category($data->contextid, true);
-                $this->set_mapping('question_category_created', $oldid, $top->id, false, null, $data->contextid);
-            }
-            $this->set_mapping('question_category', $oldid, $top->id);
-        } else {
-
+        if (!empty($data->parent)) {
             // Before 3.1, the 'stamp' field could be erroneously duplicated.
             // From 3.1 onwards, there's a unique index of (contextid, stamp).
             // If we encounter a duplicate in an old restore file, just generate a new stamp.
