@@ -188,7 +188,12 @@ if ($message = optional_param('message', '', PARAM_TEXT)) {
 }
 
 // Load the lists of question banks.
-$allinstancesgen = \core_question\sharing\helper::get_instances(\core_question\sharing\helper::OPEN);
+$allinstancesgen = \core_question\sharing\helper::get_instances(
+        \core_question\sharing\helper::OPEN,
+        [],
+        [],
+        ['moodle/question:managecategory']
+);
 
 // Do output.
 $tertiarynav = new edit_nav_actions($cmid, edit_nav_actions::SUMMARY);
