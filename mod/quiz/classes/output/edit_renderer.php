@@ -51,7 +51,6 @@ class edit_renderer extends \plugin_renderer_base {
      * @param \core_question\local\bank\question_edit_contexts $contexts the relevant question bank contexts.
      * @param \moodle_url $pageurl the canonical URL of this page.
      * @param array $pagevars the variables from {@link question_edit_setup()}.
-     * @param iterable $allopenbanksgen
      * @return string HTML to output.
      */
     public function edit_page(
@@ -60,9 +59,7 @@ class edit_renderer extends \plugin_renderer_base {
             \core_question\local\bank\question_edit_contexts $contexts,
             \moodle_url $pageurl,
             array $pagevars,
-            iterable $allopenbanksgen
     ) {
-        global $USER;
 
         $output = '';
 
@@ -116,8 +113,6 @@ class edit_renderer extends \plugin_renderer_base {
 
         // Initialise the JavaScript.
         $this->initialise_editing_javascript($structure, $contexts, $pagevars, $pageurl);
-        $recentlyused = \core_question\local\bank\question_bank_helper::get_recently_used_open_banks($USER->id, $structure->get_courseid());
-        [$courseopenbanks, $allopenbanks] = $this->format_banks_for_output($structure->get_courseid(), $allopenbanksgen);
 
         // Include the contents of any other popups required.
         if ($structure->can_be_edited()) {
@@ -126,9 +121,6 @@ class edit_renderer extends \plugin_renderer_base {
                     $thiscontext->id,
                     $quizobj->get_cm()->id,
                     $quizobj->get_cm()->id,
-                    $courseopenbanks,
-                    $allopenbanks,
-                    $recentlyused,
             ]);
 
             $this->page->requires->js_call_amd('mod_quiz/modal_add_random_question', 'init', [
@@ -137,9 +129,6 @@ class edit_renderer extends \plugin_renderer_base {
                     $pagevars['cat'],
                     $pageurl->out_as_local_url(true),
                     $pageurl->param('cmid'),
-                    $courseopenbanks,
-                    $allopenbanksgen,
-                    $recentlyused,
                     \core\plugininfo\qbank::is_plugin_enabled(\qbank_managecategories\helper::PLUGINNAME),
             ]);
 
@@ -148,60 +137,6 @@ class edit_renderer extends \plugin_renderer_base {
         }
 
         return $output;
-    }
-
-    /**
-     * @param iterable $banks
-     * @return array
-     */
-    private function format_banks_for_output(int $currentcourseid, iterable $banks): array {
-
-        $allopenbanks = [];
-        $coursebanks = [];
-
-        foreach ($banks as $bank) {
-            $formatted = [
-                    'bankmodid' => $bank->cminfo->id,
-                    'name' => $bank->bankname,
-            ];
-            if ($bank->cminfo->course == $currentcourseid) {
-                $coursebanks[] = $formatted;
-            } else {
-                $allopenbanks[] = $formatted;
-            }
-        }
-
-        return [$coursebanks, $allopenbanks];
-    }
-
-    /**
-     * Renders the switch question bank content list for mod_quiz/modal_quiz_question_bank
-     *
-     * @param string $quizname
-     * @param int $quizmodid
-     * @param array $courseopenbanks
-     * @param array $allopenbanks
-     * @param array $recentlyviewedbanks
-     * @return bool|string
-     */
-    public function switch_question_bank_fragment(
-            string $quizname,
-            int $quizmodid,
-            array $courseopenbanks,
-            array $allopenbanks,
-            array $recentlyviewedbanks,
-    ) {
-        $context = [
-                'quizname' => $quizname,
-                'quizmodid' => $quizmodid,
-                'hascourseopenbanks' => !empty($courseopenbanks),
-                'courseopenbanks' => $courseopenbanks,
-                'hasrecentlyviewedbanks' => !empty($recentlyviewedbanks),
-                'recentlyviewedbanks' => $recentlyviewedbanks,
-                'allopenbanks' => $allopenbanks,
-        ];
-
-        return $this->render_from_template('mod_quiz/switch_question_bank', $context);
     }
 
     /**

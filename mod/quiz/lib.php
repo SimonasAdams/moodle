@@ -25,7 +25,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
+use core_question\local\bank\question_bank_helper;
 use qbank_managecategories\helper;
 
 defined('MOODLE_INTERNAL') || die();
@@ -2351,22 +2351,13 @@ function mod_quiz_output_fragment_quiz_question_bank($args): string {
 }
 
 function mod_quiz_output_fragment_switch_question_bank($args): string {
-    global $PAGE;
+    global $USER, $COURSE, $OUTPUT;
 
     $quizcmid = clean_param($args['quizcmid'], PARAM_INT);
-    [, $cm] = get_module_from_cmid($quizcmid);
-    $cminfo = cm_info::create($cm);
-    $courseopenbanks = json_decode($args['courseopenbanks'], true, 3, JSON_THROW_ON_ERROR);
-    $allopenbanks = json_decode($args['allopenbanks'], true, 3, JSON_THROW_ON_ERROR);
-    $recentlyviewedbanks = json_decode($args['recentlyviewedbanks'], true, 3, JSON_THROW_ON_ERROR);
 
-    return $PAGE->get_renderer('mod_quiz', 'edit')->switch_question_bank_fragment(
-            $cminfo->get_formatted_name(),
-            $quizcmid,
-            $courseopenbanks,
-            $allopenbanks,
-            $recentlyviewedbanks
-    );
+    $switchbankwidget = new \core_question\output\switch_question_bank($quizcmid, $COURSE->id, $USER->id);
+
+    return $OUTPUT->render($switchbankwidget);
 }
 
 /**

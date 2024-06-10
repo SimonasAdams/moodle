@@ -64,9 +64,9 @@ Feature: Adding questions to a quiz from a shared question bank
     And I should see "Test questions 3"
 
   Scenario: Viewing question banks not in the current course show as recently accessed
-    Given I am on the "Qbank 1" "mod_qbank > question bank" page
-    Then I am on the "Qbank 2" "mod_qbank > question bank" page
-    Then I am on the "Qbank 3" "mod_qbank > question bank" page
+    Given I am on the "qbank1" "Activity" page
+    Then I am on the "qbank2" "Activity" page
+    Then I am on the "qbank3" "Activity" page
     Then I am on the "Quiz 1" "mod_quiz > Edit" page
     And I open the "last" add to quiz menu
     And I follow "from question bank"

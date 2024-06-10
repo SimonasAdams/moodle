@@ -21,7 +21,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import $ from 'jquery';
 import Modal from './add_question_modal';
 import * as Fragment from 'core/fragment';
 import * as FormChangeChecker from 'core_form/changechecker';
@@ -47,11 +46,8 @@ export default class ModalQuizQuestionBank extends Modal {
      * @param {Number} contextId Current module context id.
      * @param {Number} bankModId Current question bank course module id.
      * @param {Number} quizModId Current quiz course module id.
-     * @param {Array} courseOpenBanks list of question banks from the current course that can be shared.
-     * @param {Array} allOpenBanks list of question banks from other courses that can be shared.
-     * @param {Array} recentlyViewedBanks list of recently viewed question banks that can be shared.
      */
-    static init(contextId, bankModId, quizModId, courseOpenBanks, allOpenBanks, recentlyViewedBanks) {
+    static init(contextId, bankModId, quizModId) {
         const selector = '.menu [data-action="questionbank"]';
         document.addEventListener('click', (e) => {
             const trigger = e.target.closest(selector);
@@ -64,9 +60,6 @@ export default class ModalQuizQuestionBank extends Modal {
                 contextId,
                 quizModId,
                 bankModId,
-                courseOpenBanks,
-                allOpenBanks,
-                recentlyViewedBanks,
                 title: trigger.dataset.header,
                 addOnPage: trigger.dataset.addonpage,
                 templateContext: {
@@ -110,8 +103,8 @@ export default class ModalQuizQuestionBank extends Modal {
             this.getContextId(),
             {
                 querystring,
-                quizmodid: this.getQuizModId(),
-                bankmodid: this.getBankModId(),
+                quizmodid: this.quizModId,
+                bankmodid: this.bankModId,
             }
         ));
     }
@@ -129,10 +122,10 @@ export default class ModalQuizQuestionBank extends Modal {
         // directly then we need to intercept the click in order to adjust the
         // href and include the correct add on page id and cmid before the page is
         // redirected.
-        const href = new URL(anchorElement.attr('href'));
+        const href = new URL(anchorElement.getAttribute('href'));
         href.searchParams.set('addonpage', this.getAddOnPageId());
-        href.searchParams.set('cmid', this.getQuizModId());
-        anchorElement.attr('href', href);
+        href.searchParams.set('cmid', this.quizModId);
+        anchorElement.setAttribute('href', href);
     }
 
     /**
@@ -148,30 +141,22 @@ export default class ModalQuizQuestionBank extends Modal {
             // If the user clicks on the "Add selected questions to the quiz" button to add some questions to the page
             // then we need to intercept the submit in order to include the correct "add on page id"
             // and the quizmod id before the form is submitted.
-            const formElement = $(e.currentTarget);
+            const formElement = e.currentTarget;
+            document.querySelector('input[name="addonpage"]').setAttribute('value', this.getAddOnPageId());
 
-            $('<input />').attr('type', 'hidden')
-                .attr('name', "addonpage")
-                .attr('value', this.getAddOnPageId())
-                .appendTo(formElement);
-
-            $('<input />').attr('type', 'hidden')
-                .attr('name', "cmid")
-                .attr('value', this.getQuizModId())
-                .appendTo(formElement);
-
-            // We also need to set the form action to be our quizmod id.
-            const actionUrl = new URL(formElement.attr('action'));
-            actionUrl.searchParams.set('cmid', this.getQuizModId());
-            formElement.attr('action', actionUrl.toString());
+            // We also need to set the form cmid & action as the quiz modid as this could be coming from a module that isn't a quiz.
+            document.querySelector('form#questionsubmit input[name="cmid"]').setAttribute('value', this.quizModId);
+            const actionUrl = new URL(formElement.getAttribute('action'));
+            actionUrl.searchParams.set('cmid', this.quizModId);
+            formElement.setAttribute('action', actionUrl.toString());
         });
 
         this.getModal().on('click', SELECTORS.SWITCH_TO_OTHER_BANK, () => {
             this.handleSwitchBankContentReload(SELECTORS.BANK_SEARCH).then(function (ModalQuizQuestionBank) {
-                $(SELECTORS.BANK_SEARCH).on('change',(e) => {
-                        const bankModId = $(e.currentTarget).val();
+                    document.querySelector(SELECTORS.BANK_SEARCH).addEventListener('change', (e) => {
+                        const bankModId = e.currentTarget.value;
                         if (bankModId > 0) {
-                            ModalQuizQuestionBank.setBankModId(bankModId);
+                            ModalQuizQuestionBank.bankModId = bankModId;
                             ModalQuizQuestionBank.reloadBodyContent(window.location.search);
                         }
                     });
@@ -180,31 +165,31 @@ export default class ModalQuizQuestionBank extends Modal {
         });
 
         this.getModal().on('click', SELECTORS.ANCHOR, (e) => {
-            const anchorElement = $(e.currentTarget);
+            const anchorElement = e.currentTarget;
 
             // If the anchor element was the add to quiz link.
-            if (anchorElement.closest(SELECTORS.ADD_TO_QUIZ_CONTAINER).length) {
+            if (anchorElement.closest(SELECTORS.ADD_TO_QUIZ_CONTAINER)) {
                 this.handleAddToQuizEvent(e, anchorElement);
                 return;
             }
 
             // If the anchor element was a preview question link.
-            if (anchorElement.closest(SELECTORS.PREVIEW_CONTAINER).length) {
+            if (anchorElement.closest(SELECTORS.PREVIEW_CONTAINER)) {
                 return;
             }
 
             // Sorting links have their own handler.
-            if (anchorElement.closest(SELECTORS.SORTERS).length) {
+            if (anchorElement.closest(SELECTORS.SORTERS)) {
                 return;
             }
 
-            if (anchorElement.closest('a[' + SELECTORS.NEW_BANKMOD_ID + ']').length) {
-                this.setBankModId(anchorElement.attr(SELECTORS.NEW_BANKMOD_ID));
+            if (anchorElement.closest('a[' + SELECTORS.NEW_BANKMOD_ID + ']')) {
+                this.bankModId = anchorElement.getAttribute(SELECTORS.NEW_BANKMOD_ID);
             }
 
             // Anything else means reload the pop-up contents.
             e.preventDefault();
-            this.reloadBodyContent(anchorElement.prop('search'));
+            this.reloadBodyContent(anchorElement.search);
         });
 
         // Disable the form change checker when the body is rendered.

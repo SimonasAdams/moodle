@@ -38,14 +38,10 @@ export default class AddQuestionModal extends Modal {
         this.setContextId(modalConfig.contextId);
         this.setAddOnPageId(modalConfig.addOnPage);
 
-        this.setCourseOpenBanks(modalConfig.courseOpenBanks);
-        this.setAllOpenBanks(modalConfig.allOpenBanks);
-        this.setRecentlyViewedBanks(modalConfig.recentlyViewedBanks);
-
         // Store the quiz module id for when we need to POST to the quiz.
         // This is because the URL cmid param will change during filter operations as we will be in another bank context.
-        this.setQuizModId(modalConfig.quizModId);
-        this.setBankModId(modalConfig.bankModId);
+        this.quizModId = modalConfig.quizModId;
+        this.bankModId = modalConfig.bankModId;
 
         // Apply standard configuration.
         super.configure(modalConfig);
@@ -80,24 +76,6 @@ export default class AddQuestionModal extends Modal {
     }
 
     /**
-     * The course module id of the question bank.
-     *
-     * @param {Number} bankModId
-     */
-    setBankModId(bankModId) {
-        this.bankModId = bankModId;
-    }
-
-    /**
-     * The course module id of the question bank.
-     *
-     * @return {Number}
-     */
-    getBankModId() {
-        return this.bankModId;
-    }
-
-    /**
      * Set the id of the page that the question should be added to
      * when the user clicks the add to quiz link.
      *
@@ -119,62 +97,6 @@ export default class AddQuestionModal extends Modal {
     }
 
     /**
-     * @param {Number} quizModId
-     */
-    setQuizModId(quizModId) {
-        this.quizModId = quizModId;
-    }
-
-    /**
-     * @returns {Number}
-     */
-    getQuizModId() {
-        return this.quizModId;
-    }
-
-    /**
-     * @param {array} courseOpenBanks
-     */
-    setCourseOpenBanks(courseOpenBanks) {
-        this.courseOpenBanks = courseOpenBanks;
-    }
-
-    /**
-     * @return {array} allOpenBanks
-     */
-    getCourseOpenBanks() {
-        return this.courseOpenBanks;
-    }
-
-    /**
-     * @param {array} allOpenBanks
-     */
-    setAllOpenBanks(allOpenBanks) {
-        this.allOpenBanks = allOpenBanks;
-    }
-
-    /**
-     * @return {array} allOpenBanks
-     */
-    getAllOpenBanks() {
-        return this.allOpenBanks;
-    }
-
-    /**
-     * @param {array} recentlyViewedBanks
-     */
-    setRecentlyViewedBanks(recentlyViewedBanks) {
-        this.recentlyViewedBanks = recentlyViewedBanks;
-    }
-
-    /**
-     * @return {Array} recentlyViewedBanks
-     */
-    getRecentlyViewedBanks() {
-        return this.recentlyViewedBanks;
-    }
-
-    /**
      * @param {String} Selector for the original select element.
      * @return {Promise} Modal.
      */
@@ -186,11 +108,8 @@ export default class AddQuestionModal extends Modal {
                 'switch_question_bank',
                 this.getContextId(),
                 {
-                    'quizcmid': this.getQuizModId(),
-                    'bankmodid': this.getBankModId(),
-                    'courseopenbanks': JSON.stringify(this.getCourseOpenBanks()),
-                    'allopenbanks': JSON.stringify(this.getAllOpenBanks()),
-                    'recentlyviewedbanks': JSON.stringify((this.getRecentlyViewedBanks())),
+                    'quizcmid': this.quizModId,
+                    'bankmodid': this.bankModId,
                 })
         );
         const placeholder = await getString('searchbyname', 'mod_quiz').then((str) => { return str;});
