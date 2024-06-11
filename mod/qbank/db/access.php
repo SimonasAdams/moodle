@@ -48,5 +48,16 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'moodle/course:manageactivities'
     ],
+    'mod/qbank:view' => [
+            'captype' => 'read',
+            'contextlevel' => CONTEXT_MODULE,
+            'archetypes' => [
+                    'guest' => CAP_ALLOW,
+                    'student' => CAP_ALLOW,
+                    'teacher' => CAP_ALLOW,
+                    'editingteacher' => CAP_ALLOW,
+                    'manager' => CAP_ALLOW,
+            ],
+    ],
 ];
 
