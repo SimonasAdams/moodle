@@ -702,8 +702,8 @@ class secondary extends view {
         $nodes = $this->get_default_module_mapping();
 
         if ($mainnode) {
-            $url = new \moodle_url('/mod/' . $settingsnav->get_page()->activityname . '/view.php',
-                ['id' => $settingsnav->get_page()->cm->id]);
+                $url = new \moodle_url('/mod/' . $settingsnav->get_page()->activityname . '/view.php',
+                        ['id' => $settingsnav->get_page()->cm->id]);
             $setactive = $url->compare($settingsnav->get_page()->url, URL_MATCH_BASE);
             $node = $rootnode->add(get_string('modulename', $settingsnav->get_page()->activityname), $url,
                 null, null, 'modulepage');

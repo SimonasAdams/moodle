@@ -1548,6 +1548,7 @@ function question_extend_settings_navigation(navigation_node $navigationnode, $c
     global $PAGE;
 
     if ($context->contextlevel == CONTEXT_COURSE) {
+        $baseurl = '/question/banks.php';
         $params = ['courseid' => $context->instanceid];
     } else if ($context->contextlevel == CONTEXT_MODULE) {
         $params = ['cmid' => $context->instanceid];
