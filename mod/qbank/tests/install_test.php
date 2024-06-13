@@ -25,6 +25,18 @@
 
 use core_question\local\bank\question_version_status;
 
+/**
+ * Before testing, we firstly need to create some data to emulate what sites can have pre-upgrade.
+ * Namely, we are adding question categories and questions to deprecated contexts i.e. anything not CONTEXT_MODULE,
+ * and to quiz local banks too as we need to test these don't get touched.
+ * It also adds questions to some categories that are not used by quizzes anywhere.
+ *
+ * The tests cover a few areas.
+ * 1: We validate the data setup is correct before we run the install script testing.
+ * 2: The install test validates that any question categories not in CONTEXT_MODULE get transferred to relevant mod_qbank
+ * instances including their questions. It also validates that any stale questions that are not in use by quizzes are removed
+ * along with empty categories.
+ */
 class install_test extends advanced_testcase {
     private \core\context\coursecat $coursecatcontext;
     private \core\context\course $coursecontext;
@@ -47,10 +59,45 @@ class install_test extends advanced_testcase {
         return $DB->get_records_sql($sql, $inparams);
     }
 
+    /**
+     * This is hacky, but we can't use the API to create these as non module contexts are deprecated for holding question categories.
+     */
+    private function create_question_category(string $name, int $contextid, int $parentid = 0): stdClass {
 
-    protected function setUp(): void {
         global $DB;
 
+        if (!$parentid) {
+            if (!$parent = $DB->get_record('question_categories', ['contextid' => $contextid, 'parent' => 0, 'name' => 'top'])) {
+                $parent = new stdClass();
+                $parent->name = 'top';
+                $parent->info = '';
+                $parent->contextid = $contextid;
+                $parent->parent = 0;
+                $parent->sortorder = 0;
+                $parent->stamp = make_unique_id_code();
+                $parent->id = $DB->insert_record('question_categories', $parent);
+            }
+            $parentid = $parent->id;
+        }
+
+        $record = (object) [
+                'name' => $name,
+                'parent' => $parentid,
+                'contextid' => $contextid,
+                'info'       => '',
+                'infoformat' => FORMAT_HTML,
+                'stamp'      => make_unique_id_code(),
+                'sortorder'  => 999,
+                'idnumber'   => null
+        ];
+
+        $record->id = $DB->insert_record('question_categories', $record);
+        return $record;
+    }
+
+
+    protected function setup_pre_install_data(): void {
+        global $DB;
         self::setAdminUser();
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         $quizgenerator = self::getDataGenerator()->get_plugin_generator('mod_quiz');
@@ -59,20 +106,9 @@ class install_test extends advanced_testcase {
         $sitecontext = context_system::instance();
         $site = get_site();
 
-        $siteparentcat = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Site Parent Cat',
-                        'contextid' => $sitecontext->id,
-                ]
-        );
+        $siteparentcat = $this->create_question_category('Site Parent Cat', $sitecontext->id);
 
-        $sitechildcat = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Site Child Cat',
-                        'contextid' => $sitecontext->id,
-                        'parent' => $siteparentcat->id,
-                ]
-        );
+        $sitechildcat = $this->create_question_category('Site Child Cat', $sitecontext->id, $siteparentcat->id);
 
         $question1 = $questiongenerator->create_question(
                 'shortanswer',
@@ -93,12 +129,7 @@ class install_test extends advanced_testcase {
         // Create a course category and then a question category attached to that context.
         $coursecategory = self::getDataGenerator()->create_category();
         $this->coursecatcontext = context_coursecat::instance($coursecategory->id);
-        $coursecatcat = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Course Cat Parent Cat',
-                        'contextid' => $this->coursecatcontext->id,
-                ]
-        );
+        $coursecatcat = $this->create_question_category('Course Cat Parent Cat', $this->coursecatcontext->id);
 
         // Add a question to the category just made.
         $question3 = $questiongenerator->create_question('shortanswer', null, ['category' => $coursecatcat->id]);
@@ -111,18 +142,11 @@ class install_test extends advanced_testcase {
         // Create 2 nested categories with questions in them at course context level.
         $course = self::getDataGenerator()->create_course();
         $this->coursecontext = context_course::instance($course->id);
-        $courseparentcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Course Parent Cat',
-                        'contextid' => $this->coursecontext->id,
-                ]
-        );
-        $coursechildcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Course Child Cat',
-                        'contextid' => $this->coursecontext->id,
-                        'parent' => $courseparentcat1->id,
-                ]
+        $courseparentcat1 = $this->create_question_category('Course Parent Cat', $this->coursecontext->id);
+        $coursechildcat1 = $this->create_question_category(
+                'Course Child Cat',
+                $this->coursecontext->id,
+                $courseparentcat1->id
         );
 
         $question4 = $questiongenerator->create_question('shortanswer', null, ['category' => $courseparentcat1->id]);
@@ -136,39 +160,11 @@ class install_test extends advanced_testcase {
         // Create some nested categories with no questions in use.
         $course = self::getDataGenerator()->create_course();
         $context = context_course::instance($course->id);
-        $courseparentcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Stale Course Parent Cat1',
-                        'contextid' => $context->id,
-                ]
-        );
-        $coursechildcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Stale Course Child Cat1',
-                        'contextid' => $context->id,
-                        'parent' => $courseparentcat1->id,
-                ]
-        );
-        $courseparentcat2 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Stale Course Parent Cat2',
-                        'contextid' => $context->id,
-                ]
-        );
-        $coursechildcat2 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Stale Course Child Cat2',
-                        'contextid' => $context->id,
-                        'parent' => $courseparentcat2->id,
-                ]
-        );
-        $coursegrandchildcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Stale Course Grandchild Cat1',
-                        'contextid' => $context->id,
-                        'parent' => $coursechildcat2->id,
-                ]
-        );
+        $courseparentcat1 = $this->create_question_category('Stale Course Parent Cat1', $context->id);
+        $coursechildcat1 = $this->create_question_category('Stale Course Child Cat1', $context->id, $courseparentcat1->id);
+        $courseparentcat2 = $this->create_question_category('Stale Course Parent Cat2', $context->id);
+        $coursechildcat2 = $this->create_question_category('Stale Course Child Cat2', $context->id, $courseparentcat2->id);
+        $coursegrandchildcat1 = $this->create_question_category('Stale Course Grandchild Cat1', $context->id, $coursechildcat2->id);
         $this->stalecoursecontext = context_course::instance($course->id);
 
         // Make all the questions hidden.
@@ -205,28 +201,18 @@ class install_test extends advanced_testcase {
         $course = self::getDataGenerator()->create_course();
         $quiz = $quizgenerator->create_instance(['course' => $course->id, 'grade' => 100.0, 'sumgrades' => 2, 'layout' => '1,0']);
         $this->quizcontext = context_module::instance($quiz->cmid);
-        $quizparentcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Quiz Mod Parent Cat1',
-                        'contextid' => $this->quizcontext->id,
-                ]
-        );
-        $quizchildcat1 = $questiongenerator->create_question_category(
-                [
-                        'name' => 'Quiz Mod Child Cat1',
-                        'contextid' => $this->quizcontext->id,
-                        'parent' => $quizparentcat1->id,
-                ]
-        );
+        $quizparentcat1 = $this->create_question_category('Quiz Mod Parent Cat1', $this->quizcontext->id);
+        $quizchildcat1 = $this->create_question_category('Quiz Mod Child Cat1', $this->quizcontext->id, $quizparentcat1->id);
         $question1 = $questiongenerator->create_question('shortanswer', null, ['category' => $quizparentcat1->id]);
         $question2 = $questiongenerator->create_question('shortanswer', null, ['category' => $quizchildcat1->id]);
         quiz_add_quiz_question($question1->id, $quiz, 1);
         quiz_add_quiz_question($question2->id, $quiz, 1);
     }
 
-    public function test_setup() {
+    public function test_setup_pre_install_data() {
         global $DB;
         $this->resetAfterTest();
+        $this->setup_pre_install_data();
 
         $sitecontext = context_system::instance();
         $allsitecats = $DB->get_records('question_categories', ['contextid' => $sitecontext->id], 'id ASC');
@@ -290,6 +276,7 @@ class install_test extends advanced_testcase {
         global $CFG, $DB;
         require_once $CFG->dirroot . '/mod/qbank/db/install.php';
         $this->resetAfterTest();
+        $this->setup_pre_install_data();
 
         xmldb_qbank_install();
 
@@ -343,7 +330,7 @@ class install_test extends advanced_testcase {
         $this->assertEquals("{$coursecat->name}-{$coursecat->id}", $newcourse->shortname);
 
         // Make sure the new course fullname is based on the category name.
-        $this->assertEquals("Shared teaching resources for Category: {$coursecat->name}", $newcourse->fullname);
+        $this->assertEquals("Shared teaching resources for category: {$coursecat->name}", $newcourse->fullname);
 
         $coursemodinfo = get_fast_modinfo($newcourse);
         $coursecatqbanks = $coursemodinfo->get_instances_of('qbank');
