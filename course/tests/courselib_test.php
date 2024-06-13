@@ -1375,7 +1375,7 @@ class courselib_test extends advanced_testcase {
         $newsection = get_fast_modinfo($course)->get_section_info(3);
 
         // Try to perform the move.
-        $this->expectOutputString("!! Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0 !!\n");
+        $this->expectExceptionMessage("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0\n");
         moveto_module($qbankcm, $newsection);
         $qbankcms = get_fast_modinfo($course)->get_instances_of('qbank');
         $qbankcm = reset($qbankcms);

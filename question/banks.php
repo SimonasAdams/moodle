@@ -15,7 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * moodlecore manage banks.
+ * This script shows a list of all the question banks in a course.
+ * It is normally reached from More -> Question banks in the course navigation.
  *
  * @package    moodlecore
  * @subpackage questionbank
@@ -58,7 +59,7 @@ $allcaps = [
 $openbanksgenerator = question_bank_helper::get_instances(question_bank_helper::OPEN, [$course->id], [], $allcaps);
 $closedbanksgenerator = question_bank_helper::get_instances(question_bank_helper::CLOSED, [$course->id], [], $allcaps);
 
-$pageurl = new moodle_url('/question/banks.php', ['courseid' => $course->id]);
+$pageurl = question_bank_helper::get_url_for_qbank_list($course->id);
 $PAGE->set_url($pageurl);
 
 if ($createdefault) {
@@ -76,7 +77,7 @@ $closedbanksrenderable = new \core_question\output\question_bank_list($closedban
 $closedbanks = $closedbanksrenderable->export_for_template($output);
 $addbankrenderable = new \core_question\output\add_bank_list($course, question_bank_helper::get_open_modules());
 $createdefaultrenderable = new \single_button(
-        new \moodle_url('/question/banks.php', ['createdefault' => true, 'courseid' => $course->id]),
+        question_bank_helper::get_url_for_qbank_list($course->id, true),
         get_string('createdefault', 'question')
 );
 

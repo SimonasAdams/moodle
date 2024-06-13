@@ -25,7 +25,7 @@
 
 require_once __DIR__ . '/../../config.php';
 global $CFG;
+require_once $CFG->libdir . '/questionlib.php';
 
-// Only expect cmid when redirecting from this page.
-$url = new moodle_url('/question/edit.php', ['cmid' => optional_param('id', null, PARAM_INT)]);
-redirect($url);
+$context = context_module::instance(required_param('id', PARAM_INT));
+redirect(question_edit_url($context));

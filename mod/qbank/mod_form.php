@@ -34,6 +34,14 @@ class mod_qbank_mod_form extends moodleform_mod {
         $mform = $this->_form;
         $this->standard_hidden_coursemodule_elements();
 
+        // We need to force visibility on this here as we don't need the other standard course elements.
+        $mform->addElement('hidden', 'visible', 0);
+        $mform->setType('visible', PARAM_INT);
+
+        $mform->addElement('hidden', 'type');
+        $mform->setDefaults('type', \core_question\local\bank\question_bank_helper::STANDARD);
+        $mform->setType('type', PARAM_TEXT);
+
         $mform->addElement('header', 'generalhdr', get_string('general'));
 
         // Add element for name.
@@ -74,40 +82,19 @@ class mod_qbank_mod_form extends moodleform_mod {
         }
 
         // Add our submission buttons.
-        $buttonarray[] = &$mform->createElement('submit', 'submitbutton2', get_string('saveandreturn', 'mod_qbank'));
-        $buttonarray[] = &$mform->createElement('submit', 'submitbutton', get_string('saveanddisplay', 'mod_qbank'));
-        $buttonarray[] = &$mform->createElement('cancel');
+        $buttonarray[] = $mform->createElement('submit', 'submitbutton2', get_string('saveandreturn', 'mod_qbank'));
+        $buttonarray[] = $mform->createElement('submit', 'submitbutton', get_string('saveanddisplay', 'mod_qbank'));
+        $buttonarray[] = $mform->createElement('cancel');
 
         $mform->addGroup($buttonarray, 'buttonar', '', [' '], false);
         $mform->setType('buttonar', PARAM_RAW);
     }
 
-    /**
-     * We don't need anything from the parent method.
-     *
-     * @return void
-     */
-    public function definition_after_data() {
-    }
-
-    /**
-     * We need to force visibility on this here as we don't need the other standard course elements.
-     *
-     * @return void
-     */
-    function standard_hidden_coursemodule_elements() {
-        parent::standard_hidden_coursemodule_elements();
-
-        $mform =& $this->_form;
-        $mform->addElement('hidden', 'visible', 0);
-        $mform->setType('visible', PARAM_INT);
-    }
-
     public function validation($data, $files): array {
         global $DB;
-        $mform =& $this->_form;
+        $mform = $this->_form;
 
-        // We don't want the parent validation as it has stuff we don't need.
+        // We don't want the parent validation as it has completion settings which we don't use.
         // Best call the grandparent though in case it changes in the future.
         $errors = moodleform::validation($data, $files);
 

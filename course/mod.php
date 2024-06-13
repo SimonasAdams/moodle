@@ -138,7 +138,7 @@ if (!empty($add)) {
     require_capability('moodle/course:manageactivities', $modcontext);
 
     if (plugin_supports('mod', $cm->modname, FEATURE_PUBLISHES_QUESTIONS)) {
-        $return = new moodle_url('/question/banks.php', ['courseid' => $course->id]);
+        $return = \core_question\local\bank\question_bank_helper::get_url_for_qbank_list($course->id);
     } else {
         $return = course_get_url($course, $cm->sectionnum, $urloptions);
     }

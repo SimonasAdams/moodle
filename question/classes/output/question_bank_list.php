@@ -63,13 +63,13 @@ class question_bank_list implements \renderable, \templatable {
                         new \moodle_url("/mod/{$instance->cminfo->modname}/view.php", [
                                 'id' => $instance->cminfo->id,
                         ]),
-                        $instance->bankname,
+                        $instance->name,
                 );
 
                 $banks[] = [
                         'purpose' => plugin_supports('mod', $instance->cminfo->modname, FEATURE_MOD_PURPOSE),
                         'iconurl' => $instance->cminfo->get_icon_url(),
-                        'modname' => $instance->cminfo->get_formatted_name(),
+                        'modname' => $instance->name,
                         'description' => $instance->cminfo->get_formatted_content(),
                         'managequestions' => $managequestions->export_for_template($output),
                         'managebank' => $managebankexport,

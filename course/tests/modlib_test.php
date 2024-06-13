@@ -88,7 +88,7 @@ class modlib_test extends \advanced_testcase {
      *
      * @return void
      */
-    public function test_cannot_display_type_prepare() {
+    public function test_prepare_new_moduleinfo_data_with_cannot_display_types() {
         global $DB;
         $this->resetAfterTest(true);
 

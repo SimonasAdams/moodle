@@ -28,6 +28,7 @@ namespace core_question\local\bank;
 
 use cm_info;
 use context_course;
+use moodle_url;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -125,6 +126,8 @@ class question_bank_helper {
      * @param array $notincourseids array of course ids where you do not want instances included.
      * @param array $havingcap current user must have these capabilities on each bank context.
      * @param bool $getcategories optionally return the categories belonging to these banks.
+     * @param int $currentbankid optionally include the bank id you want included as the first result from the method return.
+     * it will only be included if the other parameters allow it.
      * @return iterable
      */
     public static function get_instances(
@@ -132,7 +135,8 @@ class question_bank_helper {
             array $incourseids = [],
             array $notincourseids = [],
             array $havingcap = [],
-            bool $getcategories = false
+            bool $getcategories = false,
+            int $currentbankid = 0,
     ): iterable {
 
         if (!in_array($type, self::PLUGIN_TYPES)) {
@@ -143,7 +147,7 @@ class question_bank_helper {
         $validclosedrs = isset(self::$closedinstances) && self::$closedinstances->valid();
 
         if ((!$validopenrs && $type === self::OPEN) || (!$validclosedrs && $type === self::CLOSED)) {
-            self::init_instance_records($type, $incourseids, $notincourseids, $getcategories);
+            self::init_instance_records($type, $incourseids, $notincourseids, $getcategories, $currentbankid);
         }
 
         $instances = $type === self::OPEN ? self::$openinstances : self::$closedinstances;
@@ -157,7 +161,7 @@ class question_bank_helper {
             }
 
             $cminfo = cm_info::create($instance);
-            $toreturn = self::get_return_object($cminfo, $instance->cats ?? '');
+            $toreturn = self::get_return_object($cminfo, $instance->cats ?? '', $currentbankid);
             yield $toreturn;
         }
 
@@ -178,7 +182,8 @@ class question_bank_helper {
             string $type,
             array $incourseids = [],
             array $notincourseids = [],
-            bool $getcategories = false
+            bool $getcategories = false,
+            int $currentbankid = 0,
     ): void {
         global $DB;
 
@@ -221,13 +226,21 @@ class question_bank_helper {
             $incoursesql = '';
         }
 
+        if (!empty($currentbankid)) {
+            $orderbysql = " ORDER BY CASE WHEN cm.id = :currentbankid THEN 0 ELSE 1 END ASC, cm.id DESC ";
+            $params['currentbankid'] = $currentbankid;
+        } else {
+            $orderbysql = '';
+        }
+
         $sql = "{$select}
                 FROM {course_modules} AS cm
                 JOIN {modules} AS m ON m.id = cm.module
                 {$pluginssql}
                 {$catsql}
                 WHERE 1=1 {$notincoursesql} {$incoursesql}
-                GROUP BY cm.id";
+                GROUP BY cm.id
+                {$orderbysql}";
 
         if ($type === self::OPEN) {
             self::$openinstances = $DB->get_recordset_sql($sql, $params);
@@ -265,9 +278,9 @@ class question_bank_helper {
             if (!empty($notincourseid) && $notincourseid == $cminfo->course) {
                 continue;
             }
-            $record = new stdClass();
-            $record->bankmodid = $cminfo->id;
-            $record->name = $cminfo->get_formatted_name();
+            $record = self::get_return_object($cminfo);
+            //$record->modid = $cminfo->id;
+            //$record->name = $cminfo->get_formatted_name();
             $toreturn[] = $record;
         }
 
@@ -283,22 +296,26 @@ class question_bank_helper {
     /**
      * @param cm_info $cminfo
      * @param string $categories
+     * @param int $currentbankid
      * @return stdClass
      */
-    private static function get_return_object(cm_info $cminfo, string $categories = ''): stdClass {
+    private static function get_return_object(cm_info $cminfo, string $categories = '', int $currentbankid = 0): stdClass {
 
         $concatedcats = !empty($categories) ? explode(',', $categories) : [];
-        $categories = array_map(static function($concatedcategory) {
+        $categories = array_map(static function($concatedcategory) use ($cminfo, $currentbankid) {
             $values = explode('<->', $concatedcategory);
             $cat = new stdClass();
             $cat->id = $values[0];
             $cat->name = $values[1];
             $cat->contextid = $values[2];
+            $cat->enabled = $cminfo->id == $currentbankid ? 'enabled' : 'disabled';
             return $cat;
         }, $concatedcats);
 
         $bank = new stdClass();
-        $bank->bankname = $cminfo->get_formatted_name();
+        $bank->name = $cminfo->get_formatted_name();
+        $bank->modid = $cminfo->id;
+        $bank->contextid = $cminfo->context->id;
         $bank->cminfo = $cminfo;
         $bank->questioncategories = $categories;
 
@@ -327,7 +344,7 @@ class question_bank_helper {
         $qbank = reset($qbanks);
 
         if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance($course, "{$course->fullname} system bank", self::SYSTEM);
+            $qbank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);
         }
 
         return $qbank;
@@ -345,7 +362,7 @@ class question_bank_helper {
         $qbank = reset($qbanks);
 
         if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance(get_site(), "Preview system bank", self::PREVIEW);
+            $qbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::PREVIEW);
         }
 
         return $qbank;
@@ -414,5 +431,18 @@ class question_bank_helper {
         }
 
         return get_fast_modinfo($course)->get_cm($mod->coursemodule);
+    }
+
+    /**
+     * @param int $courseid
+     * @param bool $createdefault Pass true if you want the URL to create a default qbank instance when referred.
+     * @return moodle_url
+     */
+    public static function get_url_for_qbank_list(int $courseid, bool $createdefault = false): moodle_url {
+        $url = new moodle_url('/question/banks.php', ['courseid' => $courseid]);
+        if ($createdefault) {
+            $url->param('createdefault', true);
+        }
+        return $url;
     }
 }

@@ -101,8 +101,8 @@ class helper_test extends \advanced_testcase {
             // Must have 2 categories each bank.
             $this->assertCount(2, $courseinstance->questioncategories);
             // Must not include the bank the user does not have access to.
-            $this->assertNotEquals($openmod3->name, $courseinstance->bankname);
-            $this->assertNotEquals($closedmod3->name, $courseinstance->bankname);
+            $this->assertNotEquals($openmod3->name, $courseinstance->name);
+            $this->assertNotEquals($closedmod3->name, $courseinstance->name);
             $count++;
         }
         // Expect count of 2 bank instances.

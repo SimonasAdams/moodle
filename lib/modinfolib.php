@@ -2523,10 +2523,9 @@ class cm_info implements IteratorAggregate {
      * Use this method if you want to check if the plugin overrides any visibility checks to block rendering to the display.
      *
      * @return bool
-     * @throws coding_exception
      */
-    public function can_display(): bool {
-        return plugin_supports('mod', $this->modname, FEATURE_CAN_DISPLAY, true);
+    public function is_of_type_that_can_display(): bool {
+        return is_mod_type_visible_on_course($this->modname);
     }
 
     /**
@@ -2716,6 +2715,16 @@ class cm_info implements IteratorAggregate {
         $this->call_mod_function('cm_info_view');
         $this->state = self::STATE_VIEW;
     }
+}
+
+/**
+ * Can this module type be displayed on a course page or selected from the activity types when adding an activity to a course?
+ *
+ * @param string $modname The module type name
+ * @return bool
+ */
+function is_mod_type_visible_on_course(string $modname): bool {
+    return plugin_supports('mod', $modname, FEATURE_CAN_DISPLAY, true);
 }
 
 

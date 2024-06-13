@@ -268,6 +268,8 @@ class get_state_test extends \externallib_advanced_testcase {
      * @param int $section Section number where the activity will be added.
      * @param bool $visible Whether the activity will be visible or not.
      * @param bool $canedit Whether the activity will be accessed later by a user with editing capabilities
+     * @param bool $canrender Whether the activity should be visible on the course main page,
+     * or can be created on the course add activity menu
      */
     private function create_activity(
             int $courseid,
