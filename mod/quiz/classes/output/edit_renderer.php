@@ -759,7 +759,7 @@ class edit_renderer extends \plugin_renderer_base {
 
         $question = $structure->get_question_in_slot($slot);
         $bankcontext = \context::instance_by_id($question->contextid);
-        $cminfo = \cm_info::create($DB->get_record('course_modules', ['id' => $bankcontext->instanceid]));
+        [, $cminfo] = get_course_and_cm_from_cmid(cmorid: $bankcontext->instanceid, courseorid: $structure->get_courseid());
         $issharedbank = plugin_supports('mod', $cminfo->modname, FEATURE_PUBLISHES_QUESTIONS, false);
         $bankurl = (new \moodle_url('/question/edit.php',
                 [
