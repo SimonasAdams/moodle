@@ -2567,6 +2567,16 @@ class cm_info implements IteratorAggregate {
     }
 
     /**
+     * Use this method if you want to check if the plugin overrides any visibility checks to block rendering to the display.
+     *
+     * @return bool
+     * @throws coding_exception
+     */
+    public function can_display(): bool {
+        return plugin_supports('mod', $this->modname, FEATURE_CAN_DISPLAY, true);
+    }
+
+    /**
      * Whether this module is available but hidden from course page
      *
      * "Stealth" modules are the ones that are not shown on course page but available by following url.

@@ -18,9 +18,9 @@
  * Capability definitions for the question bank module.
  *
  * @package    mod_qbank
- * @copyright  2021 Catalyst IT Australia Pty Ltd
- * @author     2021 Matt Porritt <mattp@catalyst-au.net>
- * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
+ * @author     Simon Adams <simon.adams@catalyst-eu.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();

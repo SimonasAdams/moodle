@@ -457,8 +457,11 @@ define('FEATURE_RATE', 'rate');
 /** True if module supports backup/restore of moodle2 format */
 define('FEATURE_BACKUP_MOODLE2', 'backup_moodle2');
 
-/** True if module shares questions with other modules. These mod types are NOT rendered to the course page */
+/** True if module shares questions with other modules. */
 define('FEATURE_PUBLISHES_QUESTIONS', 'publishesquestions');
+
+/** Used by \cm_info::can_display to determine if a plugin should render to display */
+define('FEATURE_CAN_DISPLAY', 'candisplay');
 
 /** True if module can show description on course main page */
 define('FEATURE_SHOW_DESCRIPTION', 'showdescription');
@@ -4791,6 +4794,11 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
     // Delete every instance of every module,
     // this has to be done before deleting of course level stuff.
     $locations = core_component::get_plugin_list('mod');
+    // Make sure we remove any mod instance that publishes questions last, as they could have questions in use by other
+    // activities in this course.
+    uksort($locations, static function($a, $b) {
+        return plugin_supports('mod', $a, FEATURE_PUBLISHES_QUESTIONS) <=> plugin_supports('mod', $b, FEATURE_PUBLISHES_QUESTIONS);
+    });
     foreach ($locations as $modname => $moddir) {
         if ($modname === 'NEWMODULE') {
             continue;
