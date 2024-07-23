@@ -157,6 +157,20 @@ class qformat_xml_import_export_test extends advanced_testcase {
         $this->assert_category_has_parent('Alpha', 'top');
     }
 
+    public function test_deprecated_category_import() {
+        $this->resetAfterTest();
+        self::setAdminUser();
+
+        $course = self::getDataGenerator()->create_course();
+        $qformat = $this->create_qformat('deprecated_category.xml', $course);
+        $cat = question_get_default_category($qformat->contexts[0]->id);
+        $qformat->setCategory($cat);
+        $imported = $qformat->importprocess();
+        $this->assertTrue($imported);
+        $this->assert_category_imported('Alpha', 'This is Alpha category for test', FORMAT_MOODLE, 'alpha-idnumber');
+        $this->assert_category_has_parent('Alpha', 'top');
+    }
+
     /**
      * Check importing nested categories.
      */
