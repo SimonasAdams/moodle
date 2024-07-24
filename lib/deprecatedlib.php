@@ -3367,24 +3367,57 @@ function print_grade_menu($courseid, $name, $current, $includenograde=true, $ret
  *  If no categories exist yet then default ones are created in all contexts.
  *
  * @param array $contexts The context objects.
- * @return object|null The default category - the category in the first module context supplied in $contexts
- * @deprecated since 4.5.question_make_default_category
+ * @return stdClass|null The default category - the category in the first module context supplied in $contexts
  */
-#[\core\attribute\deprecated('question_make_default_category', since: '4.5', mdl: 'MDL-71378')]
-function question_make_default_categories(array $contexts): ?stdClass {
-    \core\deprecation::emit_deprecation_if_present(__FUNCTION__);
+#[\core\attribute\deprecated('This method should not be used', since: '4.5', mdl: 'MDL-71378')]
+function question_make_default_categories($contexts): object {
+    global $DB;
+    static $preferredlevels = array(
+        CONTEXT_COURSE => 4,
+        CONTEXT_MODULE => 3,
+        CONTEXT_COURSECAT => 2,
+        CONTEXT_SYSTEM => 1,
+    );
 
-    $toreturn = [];
-
-    foreach ($contexts as $context) {
-        $toreturn[] = question_make_default_category($context);
+    $toreturn = null;
+    $preferredness = 0;
+    // If it already exists, just return it.
+    foreach ($contexts as $key => $context) {
+        $topcategory = question_get_top_category($context->id, true);
+        if (!$exists = $DB->record_exists("question_categories",
+            array('contextid' => $context->id, 'parent' => $topcategory->id))) {
+            // Otherwise, we need to make one.
+            $category = new stdClass();
+            $contextname = $context->get_context_name(false, true);
+            // Max length of name field is 255.
+            $category->name = shorten_text(get_string('defaultfor', 'question', $contextname), 255);
+            $category->info = get_string('defaultinfofor', 'question', $contextname);
+            $category->contextid = $context->id;
+            $category->parent = $topcategory->id;
+            // By default, all categories get this number, and are sorted alphabetically.
+            $category->sortorder = 999;
+            $category->stamp = make_unique_id_code();
+            $category->id = $DB->insert_record('question_categories', $category);
+        } else {
+            $category = question_get_default_category($context->id);
+        }
+        $thispreferredness = $preferredlevels[$context->contextlevel];
+        if (has_any_capability(array('moodle/question:usemine', 'moodle/question:useall'), $context)) {
+            $thispreferredness += 10;
+        }
+        if ($thispreferredness > $preferredness) {
+            $toreturn = $category;
+            $preferredness = $thispreferredness;
+        }
     }
 
-    return $toreturn[0];
+    if (!is_null($toreturn)) {
+        $toreturn = clone($toreturn);
+    }
+    return $toreturn;
 }
 
 /**
- * MDL-71378 TODO: create a deprecation tracker
  * All question categories and their questions are deleted for this course.
  *
  * @param stdClass $course an object representing the activity
@@ -3410,7 +3443,6 @@ function question_delete_course($course, $notused = false): bool {
  *      category where content moved
  * @param bool $notused this argument is no longer used. Kept for backwards compatibility.
  * @return boolean
- * @deprecated since Moodle 4.5 MDL-71378 TODO add tracker
  */
 #[\core\attribute\deprecated('This method should not be used', since: '4.5', mdl: 'MDL-71378')]
 function question_delete_course_category($category, $newcategory, $notused = false): bool {

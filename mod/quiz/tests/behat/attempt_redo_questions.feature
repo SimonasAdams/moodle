@@ -19,11 +19,12 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
       | teacher | C1     | teacher        |
       | editor  | C1     | editingteacher |
     And the following "activities" exist:
-      | activity | name   | intro              | course | idnumber | preferredbehaviour | canredoquestions |
-      | quiz     | Quiz 1 | Quiz 1 description | C1     | quiz1    | immediatefeedback  | 1                |
+      | activity | name    | intro              | course | idnumber | preferredbehaviour | canredoquestions |
+      | quiz     | Quiz 1  | Quiz 1 description | C1     | quiz1    | immediatefeedback  | 1                |
+      | qbank    | Qbank 1 |                    | C1     | qbank1   |                    |                  |
     And the following "question categories" exist:
       | contextlevel    | reference    | name           |
-      | Activity module | quiz1        | Test questions |
+      | Activity module | qbank1       | Test questions |
     And the following "questions" exist:
       | questioncategory | qtype     | name | questiontext    |
       | Test questions   | truefalse | TF1  | First question  |
@@ -190,27 +191,22 @@ Feature: Allow students to redo questions in a practice quiz, without starting a
     Given the following "activities" exist:
       | activity | name   | intro              | course | idnumber | preferredbehaviour | canredoquestions |
       | quiz     | Quiz 2 | Quiz 2 description | C1     | quiz2    | immediatefeedback  | 1                |
-    And the following "question categories" exist:
-      | contextlevel    | reference    | name             |
-      | Activity module | quiz2        | Test questions 2 |
-    And the following "questions" exist:
-      | questioncategory  | qtype     | name | questiontext    |
-      | Test questions 2  | truefalse | TF3  | Third question  |
-      | Test questions 2  | truefalse | TF4  | Fourth question |
     And I am on the "Quiz 2" "mod_quiz > Edit" page logged in as "admin"
     And I open the "last" add to quiz menu
     And I follow "a random question"
+    And I click on "Switch bank" "button"
+    And I click on "Qbank 1" "link"
     And I press "Add random question"
     And user "student" has started an attempt at quiz "Quiz 2" randomised as follows:
       | slot | actualquestion |
-      | 1    | TF3            |
+      | 1    | TF1            |
     And I am on the "Quiz 2" "mod_quiz > View" page logged in as "student"
     When I press "Continue your attempt"
-    And I should see "Third question"
+    And I should see "First question"
     And I click on "False" "radio"
     And I click on "Check" "button"
     And I press "Try another question like this one"
-    And I should see "Fourth question"
+    And I should see "Second question"
     And "Check" "button" should exist
 
   Scenario: Teachers reviewing can see author of action in review attempt

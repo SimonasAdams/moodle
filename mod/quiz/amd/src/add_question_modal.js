@@ -157,6 +157,8 @@ export default class AddQuestionModal extends Modal {
     }
 
     /**
+     * Update the modal with a list of banks to switch to and enhance the standard selects to Autocomplete fields.
+     *
      * @param {String} Selector for the original select element.
      * @return {Promise} Modal.
      */
