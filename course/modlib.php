@@ -499,7 +499,7 @@ function set_moduleinfo_defaults($moduleinfo) {
     }
 
     // Module types with this flag set to false must always be in section number 0.
-    if (!plugin_supports('mod', $moduleinfo->modulename, FEATURE_CAN_DISPLAY, true)) {
+    if (!course_modinfo::is_mod_type_visible_on_course($moduleinfo->modulename)) {
         $moduleinfo->section = 0;
     }
 
@@ -888,7 +888,7 @@ function prepare_new_moduleinfo_data($course, $modulename, $section, string $suf
     global $CFG;
 
     // Module types with this flag set to false must always be in section number 0.
-    if (!plugin_supports('mod', $modulename, FEATURE_CAN_DISPLAY, true)) {
+    if (!course_modinfo::is_mod_type_visible_on_course($modulename)) {
         $section = 0;
     }
 

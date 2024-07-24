@@ -109,15 +109,15 @@ class content_item_readonly_repository implements content_item_readonly_reposito
     }
 
     /**
-     * Modules with flag FEATURE_CAN_DISPLAY set to false are not to be rendered to the course page.
+     * Filter out any modules that are not to be rendered or managed on the course page.
      *
      * @param $contentitems
      * @return array
      */
     private static function filter_out_items_not_to_be_displayed($contentitems): array {
         return array_filter($contentitems, static function($module) {
-            [$type, $name] = core_component::normalize_component($module->get_component_name());
-            return plugin_supports($type, $name, FEATURE_CAN_DISPLAY, true);
+            [, $name] = core_component::normalize_component($module->get_component_name());
+            return \course_modinfo::is_mod_type_visible_on_course($name);
         });
     }
 

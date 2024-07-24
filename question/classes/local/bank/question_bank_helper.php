@@ -17,8 +17,7 @@
 /**
  * Helper class for qbank sharing.
  *
- * @package    moodlecore
- * @subpackage questionbank
+ * @package    core_question
  * @copyright  2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -28,6 +27,7 @@ namespace core_question\local\bank;
 
 use cm_info;
 use context_course;
+use moodle_url;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -38,13 +38,9 @@ require_once $CFG->dirroot . '/course/modlib.php';
 
 class question_bank_helper {
 
-    private static array $openmods = [];
+    private static array $sharedmods = [];
 
-    private static array $closedmods = [];
-
-    private static \moodle_recordset $openinstances;
-
-    private static \moodle_recordset $closedinstances;
+    private static array $privatemods = [];
 
     /** @var string the type of qbank module that users create */
     public const STANDARD = 'standard';
@@ -65,13 +61,13 @@ class question_bank_helper {
     public const SHARED_TYPES = [self::STANDARD, self::SYSTEM, self::PREVIEW];
 
     /** @var string Shareable plugin type */
-    public const OPEN = 'open';
+    public const SHARED = 'shared';
 
     /** @var string Non-shareable plugin type */
-    public const CLOSED = 'closed';
+    public const PRIVATE = 'private';
 
     /** Plugin types */
-    public const PLUGIN_TYPES = [self::OPEN, self::CLOSED];
+    public const PLUGIN_TYPES = [self::SHARED, self::PRIVATE];
 
     /**
      * User preferences record key to store recently viewed question banks.
@@ -83,19 +79,19 @@ class question_bank_helper {
      *
      * @return array
      */
-    public static function get_open_modules(): array {
-        if (!empty(self::$openmods)) {
-            return self::$openmods;
+    public static function get_activity_types_with_shareable_questions(): array {
+        if (!empty(self::$sharedmods)) {
+            return self::$sharedmods;
         }
 
         $plugins = \core_component::get_plugin_list('mod');
-        self::$openmods = array_filter(
-                array_keys($plugins),
-                static fn($plugin) => plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
-                        question_module_uses_questions($plugin)
+        self::$sharedmods = array_filter(
+            array_keys($plugins),
+            static fn($plugin) => plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
+                question_module_uses_questions($plugin)
         );
 
-        return self::$openmods;
+        return self::$sharedmods;
     }
 
     /**
@@ -103,69 +99,73 @@ class question_bank_helper {
      *
      * @return array
      */
-    public static function get_closed_modules(): array {
-        if (!empty(self::$closedmods)) {
-            return self::$closedmods;
+    public static function get_activity_types_with_private_questions(): array {
+        if (!empty(self::$privatemods)) {
+            return self::$privatemods;
         }
 
         $plugins = \core_component::get_plugin_list('mod');
-        self::$closedmods = array_filter(
-                array_keys($plugins),
-                static fn($plugin) => !plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
-                        question_module_uses_questions($plugin)
+        self::$privatemods = array_filter(
+            array_keys($plugins),
+            static fn($plugin) => !plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
+                question_module_uses_questions($plugin)
         );
 
-        return self::$closedmods;
+        return self::$privatemods;
     }
 
     /**
-     * @param string $type either self::OPEN for plugin instances that implement FEATURE_PUBLISHES_QUESTIONS,
-     * or self::CLOSED for those that don't.
+     * Get records for activity modules that do publish questions, and optionally get their question categories too.
+     *
      * @param array $incourseids array of course ids where you want instances included. Leave empty if you want them from all courses.
      * @param array $notincourseids array of course ids where you do not want instances included.
      * @param array $havingcap current user must have these capabilities on each bank context.
      * @param bool $getcategories optionally return the categories belonging to these banks.
-     * @return iterable
+     * @param int $currentbankid optionally include the bank id you want included as the first result from the method return.
+     * it will only be included if the other parameters allow it.
+     * @return stdClass[]
      */
-    public static function get_instances(
-            string $type = self::OPEN,
-            array $incourseids = [],
-            array $notincourseids = [],
-            array $havingcap = [],
-            bool $getcategories = false
-    ): iterable {
+    public static function get_activity_instances_with_shareable_questions(
+        array $incourseids = [],
+        array $notincourseids = [],
+        array $havingcap = [],
+        bool $getcategories = false,
+        int $currentbankid = 0,
+    ): array {
+        return self::get_instance_records(self::SHARED,
+            $incourseids,
+            $notincourseids,
+            $getcategories,
+            $currentbankid,
+            $havingcap
+        );
+    }
 
-        if (!in_array($type, self::PLUGIN_TYPES)) {
-            throw new \moodle_exception('Invalid type');
-        }
-
-        $validopenrs = isset(self::$openinstances) && self::$openinstances->valid();
-        $validclosedrs = isset(self::$closedinstances) && self::$closedinstances->valid();
-
-        if ((!$validopenrs && $type === self::OPEN) || (!$validclosedrs && $type === self::CLOSED)) {
-            self::init_instance_records($type, $incourseids, $notincourseids, $getcategories);
-        }
-
-        $instances = $type === self::OPEN ? self::$openinstances : self::$closedinstances;
-
-        foreach ($instances as $instance) {
-            if (!empty($havingcap)) {
-                $context = \context_module::instance($instance->id);
-                if (!(new question_edit_contexts($context))->have_one_cap($havingcap)) {
-                    continue;
-                }
-            }
-
-            $cminfo = cm_info::create($instance);
-            $toreturn = self::get_return_object($cminfo, $instance->cats ?? '');
-            yield $toreturn;
-        }
-
-        if ($type === self::OPEN) {
-            self::$openinstances->close();
-        } else {
-            self::$closedinstances->close();
-        }
+    /**
+     * Get records for activity modules that don't publish questions, and optionally get their question categories too.
+     *
+     * @param array $incourseids array of course ids where you want instances included. Leave empty if you want them from all courses.
+     * @param array $notincourseids array of course ids where you do not want instances included.
+     * @param array $havingcap current user must have these capabilities on each bank context.
+     * @param bool $getcategories optionally return the categories belonging to these banks.
+     * @param int $currentbankid optionally include the bank id you want included as the first result from the method return.
+     * it will only be included if the other parameters allow it.
+     * @return stdClass[]
+     */
+    public static function get_activity_instances_with_private_questions(
+        array $incourseids = [],
+        array $notincourseids = [],
+        array $havingcap = [],
+        bool $getcategories = false,
+        int $currentbankid = 0,
+    ): array {
+        return self::get_instance_records(self::PRIVATE,
+            $incourseids,
+            $notincourseids,
+            $getcategories,
+            $currentbankid,
+            $havingcap
+        );
     }
 
     /**
@@ -173,16 +173,24 @@ class question_bank_helper {
      * @param array $incourseids
      * @param array $notincourseids
      * @param bool $getcategories
+     * @param int $currentbankid
+     * @param array $havingcap
+     * @return stdClass[]
      */
-    private static function init_instance_records(
-            string $type,
-            array $incourseids = [],
-            array $notincourseids = [],
-            bool $getcategories = false
-    ): void {
+    private static function get_instance_records(
+        string $type,
+        array $incourseids = [],
+        array $notincourseids = [],
+        bool $getcategories = false,
+        int $currentbankid = 0,
+        array $havingcap = [],
+    ): array {
         global $DB;
 
-        $plugins = $type === self::OPEN ? self::get_open_modules() : self::get_closed_modules();
+        $plugins = $type === self::SHARED ?
+            self::get_activity_types_with_shareable_questions() :
+            self::get_activity_types_with_private_questions();
+
         $pluginssql = [];
         $params = [];
 
@@ -199,7 +207,7 @@ class question_bank_helper {
         if ($getcategories) {
             $select = 'SELECT cm.*,' . $DB->sql_group_concat($DB->sql_concat('qc.id', "'<->'", 'qc.name', "'<->'", 'qc.contextid'), ',') . 'AS cats';
             $catsql = ' JOIN {context} AS c ON c.instanceid = cm.id AND c.contextlevel = ' . CONTEXT_MODULE .
-                      ' JOIN {question_categories} AS qc ON qc.contextid = c.id AND qc.parent <> 0';
+                ' JOIN {question_categories} AS qc ON qc.contextid = c.id AND qc.parent <> 0';
         } else {
             $select = 'SELECT cm.*';
             $catsql = '';
@@ -221,19 +229,35 @@ class question_bank_helper {
             $incoursesql = '';
         }
 
+        if (!empty($currentbankid)) {
+            $orderbysql = " ORDER BY CASE WHEN cm.id = :currentbankid THEN 0 ELSE 1 END ASC, cm.id DESC ";
+            $params['currentbankid'] = $currentbankid;
+        } else {
+            $orderbysql = '';
+        }
+
         $sql = "{$select}
                 FROM {course_modules} AS cm
                 JOIN {modules} AS m ON m.id = cm.module
                 {$pluginssql}
                 {$catsql}
                 WHERE 1=1 {$notincoursesql} {$incoursesql}
-                GROUP BY cm.id";
+                GROUP BY cm.id
+                {$orderbysql}";
 
-        if ($type === self::OPEN) {
-            self::$openinstances = $DB->get_recordset_sql($sql, $params);
-        } else {
-            self::$closedinstances = $DB->get_recordset_sql($sql, $params);
+        $rs = $DB->get_recordset_sql($sql, $params);
+
+        foreach ($rs as $cm) {
+            if (!empty($havingcap)) {
+                $context = \context_module::instance($cm->id);
+                if (!(new question_edit_contexts($context))->have_one_cap($havingcap)) {
+                    continue;
+                }
+            }
+            $toreturn[] = self::get_return_object($cm, $currentbankid);
         }
+
+        return $toreturn ?? [];
     }
 
     /**
@@ -261,13 +285,10 @@ class question_bank_helper {
                 throw new \moodle_exception('Invalid question bank contextlevel: ' . $context->contextlevel);
             }
             [, $cm] = get_module_from_cmid($context->instanceid);
-            $cminfo = cm_info::create($cm);
-            if (!empty($notincourseid) && $notincourseid == $cminfo->course) {
+            if (!empty($notincourseid) && $notincourseid == $cm->course) {
                 continue;
             }
-            $record = new stdClass();
-            $record->bankmodid = $cminfo->id;
-            $record->name = $cminfo->get_formatted_name();
+            $record = self::get_return_object($cm);
             $toreturn[] = $record;
         }
 
@@ -281,24 +302,30 @@ class question_bank_helper {
     }
 
     /**
-     * @param cm_info $cminfo
-     * @param string $categories
+     * Format the instance name and any categories it contains.
+     * @param stdClass $cm
+     * @param int $currentbankid
      * @return stdClass
      */
-    private static function get_return_object(cm_info $cminfo, string $categories = ''): stdClass {
+    private static function get_return_object(stdClass $cm, int $currentbankid = 0): stdClass {
 
-        $concatedcats = !empty($categories) ? explode(',', $categories) : [];
-        $categories = array_map(static function($concatedcategory) {
+        $cminfo = cm_info::create($cm);
+        $concatedcats = !empty($cm->cats) ? explode(',', $cm->cats) : [];
+        $categories = array_map(static function($concatedcategory) use ($cminfo, $currentbankid) {
             $values = explode('<->', $concatedcategory);
             $cat = new stdClass();
             $cat->id = $values[0];
             $cat->name = $values[1];
             $cat->contextid = $values[2];
+            $cat->enabled = $cminfo->id == $currentbankid ? 'enabled' : 'disabled';
             return $cat;
         }, $concatedcats);
 
         $bank = new stdClass();
-        $bank->bankname = $cminfo->get_formatted_name();
+        $bank->name = $cminfo->get_formatted_name();
+        $bank->modid = $cminfo->id;
+        $bank->contextid = $cminfo->context->id;
+        $bank->coursenamebankname = "{$cminfo->get_course()->shortname} - {$bank->name}";
         $bank->cminfo = $cminfo;
         $bank->questioncategories = $categories;
 
@@ -327,7 +354,7 @@ class question_bank_helper {
         $qbank = reset($qbanks);
 
         if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance($course, "{$course->fullname} system bank", self::SYSTEM);
+            $qbank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);
         }
 
         return $qbank;
@@ -345,7 +372,7 @@ class question_bank_helper {
         $qbank = reset($qbanks);
 
         if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance(get_site(), "Preview system bank", self::PREVIEW);
+            $qbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::PREVIEW);
         }
 
         return $qbank;
@@ -414,5 +441,18 @@ class question_bank_helper {
         }
 
         return get_fast_modinfo($course)->get_cm($mod->coursemodule);
+    }
+
+    /**
+     * @param int $courseid
+     * @param bool $createdefault Pass true if you want the URL to create a default qbank instance when referred.
+     * @return moodle_url
+     */
+    public static function get_url_for_qbank_list(int $courseid, bool $createdefault = false): moodle_url {
+        $url = new moodle_url('/question/banks.php', ['courseid' => $courseid]);
+        if ($createdefault) {
+            $url->param('createdefault', true);
+        }
+        return $url;
     }
 }

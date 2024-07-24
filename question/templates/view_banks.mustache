@@ -18,14 +18,300 @@
     @template core_question/view_banks
 
     Example context (json):
-    {
-        "openbanks": [core_question/question_banks_list],
-        "closedbanks": [core_question/question_banks_list],
-        "createdefault": single_button,
-        "addbanks": action_link
+{
+    "addqbank": {
+        "id": "single_button669e2ffb6fafe23",
+        "formid": null,
+        "method": "post",
+        "url": "/course/modedit.php",
+        "label": "Add",
+        "classes": "singlebutton",
+        "disabled": false,
+        "tooltip": null,
+        "type": "primary",
+        "attributes": [],
+        "params": [
+            {
+                "name": "add",
+                "value": "qbank"
+            },
+            {
+                "name": "course",
+                "value": "1"
+            },
+            {
+                "name": "section",
+                "value": "0"
+            },
+            {
+                "name": "return",
+                "value": "0"
+            },
+            {
+                "name": "sr",
+                "value": "0"
+            },
+            {
+                "name": "beforemod",
+                "value": "0"
+            },
+            {
+                "name": "sesskey",
+                "value": "abcde1234"
+            }
+        ],
+        "actions": [],
+        "hasactions": false
+    },
+    "hassharedbanks": true,
+    "sharedbanks": [
+        {
+            "purpose": "content",
+            "iconurl": {},
+            "modname": "Question bank 1",
+            "description": "<div class=\"no-overflow\">Description<\/div>",
+            "managequestions": {
+                "id": "action_link669e2ffb6fafe13",
+                "disabled": false,
+                "text": "Question bank 1",
+                "url": "/mod/qbank/view.php?id=1",
+                "icon": null,
+                "classes": "",
+                "attributes": [],
+                "actions": [],
+                "hasactions": false
+            },
+            "managebank": {
+                "instance": 1,
+                "classes": "moodle-actionmenu",
+                "attributes": [
+                    {
+                        "name": "id",
+                        "value": "action-menu-1"
+                    },
+                    {
+                        "name": "data-enhance",
+                        "value": "moodle-core-actionmenu"
+                    }
+                ],
+                "primary": {
+                    "title": "",
+                    "prioritise": false,
+                    "classes": "menubar",
+                    "attributes": [
+                        {
+                            "name": "id",
+                            "value": "action-menu-1-menubar"
+                        }
+                    ],
+                    "triggerattributes": [],
+                    "menutrigger": "<i class=\"icon fa fa-ellipsis-v fa-fw \"  title=\"Edit\" role=\"img\" aria-label=\"Edit\"><\/i>",
+                    "triggerextraclasses": "btn btn-icon d-flex align-items-center justify-content-center no-caret ",
+                    "triggerrole": "button",
+                    "iconraw": "",
+                    "actiontext": "",
+                    "items": []
+                },
+                "secondary": {
+                    "classes": "menu",
+                    "attributes": [
+                        {
+                            "name": "id",
+                            "value": "action-menu-1-menu"
+                        },
+                        {
+                            "name": "data-rel",
+                            "value": "menu-content"
+                        },
+                        {
+                            "name": "aria-labelledby",
+                            "value": "action-menu-toggle-1"
+                        },
+                        {
+                            "name": "role",
+                            "value": "menu"
+                        }
+                    ],
+                    "items": [
+                        {
+                            "simpleitem": false,
+                            "actionmenulink": {
+                                "id": "action_link669e2ffb6fafe7",
+                                "disabled": false,
+                                "text": "Edit settings",
+                                "url": "/course/mod.php?sesskey=abcde12345&update=2",
+                                "icon": {
+                                    "key": "t\/edit",
+                                    "component": "moodle",
+                                    "title": ""
+                                },
+                                "classes": "editing_update menu-action",
+                                "attributes": [
+                                    {
+                                        "name": "data-action",
+                                        "value": "update"
+                                    },
+                                    {
+                                        "name": "role",
+                                        "value": "menuitem"
+                                    },
+                                    {
+                                        "name": "tabindex",
+                                        "value": "-1"
+                                    }
+                                ],
+                                "actions": [],
+                                "hasactions": false,
+                                "showtext": true
+                            }
+                        },
+                        {
+                            "simpleitem": false,
+                            "actionmenulink": {
+                                "id": "action_link669e2ffb6fafe11",
+                                "disabled": false,
+                                "text": "Assign roles",
+                                "url": "/admin/roles/assign.php?contextid=1",
+                                "icon": {
+                                    "key": "t\/assignroles",
+                                    "component": "moodle",
+                                    "title": ""
+                                },
+                                "classes": "editing_assign menu-action",
+                                "attributes": [
+                                    {
+                                        "name": "data-action",
+                                        "value": "assignroles"
+                                    },
+                                    {
+                                        "name": "data-sectionreturn",
+                                        "value": null
+                                    },
+                                    {
+                                        "name": "role",
+                                        "value": "menuitem"
+                                    },
+                                    {
+                                        "name": "tabindex",
+                                        "value": "-1"
+                                    }
+                                ],
+                                "actions": [],
+                                "hasactions": false,
+                                "showtext": true
+                            }
+                        },
+                        {
+                            "simpleitem": false,
+                            "actionmenulink": {
+                                "id": "action_link669e2ffb6fafe12",
+                                "disabled": false,
+                                "text": "Delete",
+                                "url": "/course/mod.php?sesskey=abcde12345&delete=2",
+                                "icon": {
+                                    "key": "t\/delete",
+                                    "component": "moodle",
+                                    "title": ""
+                                },
+                                "classes": "editing_delete text-danger menu-action",
+                                "attributes": [
+                                    {
+                                        "name": "data-action",
+                                        "value": "cmDelete"
+                                    },
+                                    {
+                                        "name": "data-sectionreturn",
+                                        "value": null
+                                    },
+                                    {
+                                        "name": "data-id",
+                                        "value": "2"
+                                    },
+                                    {
+                                        "name": "role",
+                                        "value": "menuitem"
+                                    },
+                                    {
+                                        "name": "tabindex",
+                                        "value": "-1"
+                                    }
+                                ],
+                                "actions": [],
+                                "hasactions": false,
+                                "showtext": true
+                            }
+                        }
+                    ]
+                },
+                "dropdownalignment": "dropdown-menu-right"
+            }
+        }
+    ],
+    "hasprivatebanks": true,
+    "privatebanks": [
+        {
+            "purpose": "assessment",
+            "iconurl": {},
+            "modname": "Quiz 1",
+            "description": "",
+            "managequestions": {
+                "id": "action_link669e2ffb6fafe21",
+                "disabled": false,
+                "text": "Quiz 1",
+                "url": "/mod/quiz/view.php?id=1",
+                "icon": null,
+                "classes": "",
+                "attributes": [],
+                "actions": [],
+                "hasactions": false
+            },
+            "managebank": null
+        }
+    ],
+    "addcustombanks": [],
+    "createdefault": {
+        "id": "single_button669e2ffb6fafe24",
+        "formid": null,
+        "method": "post",
+        "url": "/question/banks.php",
+        "label": "Create default question bank",
+        "classes": "singlebutton",
+        "disabled": false,
+        "tooltip": null,
+        "type": "secondary",
+        "attributes": [],
+        "params": [
+            {
+                "name": "courseid",
+                "value": "1"
+            },
+            {
+                "name": "createdefault",
+                "value": "1"
+            },
+            {
+                "name": "sesskey",
+                "value": "abcde12345"
+            }
+        ],
+        "actions": [],
+        "hasactions": false
     }
+}
 }}
-{{^openbanks}}
+<h2>{{#str}}banksincourse, question{{/str}} {{#addqbank}}<div class="float-right">{{> core/single_button }}</div>{{/addqbank}}</h2>
+
+{{#addcustombanks}}
+    <div class="add-bank pt-2">
+        <ul class="list-unstyled">
+            <li>
+                {{> core/action_link}}
+            </li>
+        </ul>
+    </div>
+{{/addcustombanks}}
+
+{{^sharedbanks}}
     <div class="alert alert-info">
         {{#str}}nobanks, question{{/str}}
         {{#createdefault}}
@@ -34,30 +320,24 @@
             </div>
         {{/createdefault}}
     </div>
-{{/openbanks}}
+{{/sharedbanks}}
 
-{{#openbanks}}
-    <div class="open-banks">
-        {{< core_question/question_banks_list}}
-        {{/core_question/question_banks_list}}
+{{#hassharedbanks}}
+    <div class="shared-banks">
+        {{#sharedbanks}}
+            {{< core_question/question_banks_list}}
+            {{/core_question/question_banks_list}}
+        {{/sharedbanks}}
     </div>
-{{/openbanks}}
+{{/hassharedbanks}}
 
-{{#addbanks}}
-    <div class="add-bank pt-2">
-        <ul class="list-unstyled">
-            <li>
-                {{> core/action_link}}
-            </li>
-        </ul>
-    </div>
-{{/addbanks}}
-
-{{#closedbanks}}
-    <div class="closed-banks pt-5">
+{{#hasprivatebanks}}
+    <div class="private-banks pt-5">
         <h2>{{#str}}otherbanks, question{{/str}}</h2>
         <p>{{#str}}otherbanksdesc, question{{/str}}</p>
-        {{< core_question/question_banks_list}}
-        {{/core_question/question_banks_list}}
+        {{#privatebanks}}
+            {{< core_question/question_banks_list}}
+            {{/core_question/question_banks_list}}
+        {{/privatebanks}}
     </div>
-{{/closedbanks}}
+{{/hasprivatebanks}}
