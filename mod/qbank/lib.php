@@ -33,21 +33,18 @@ defined('MOODLE_INTERNAL') || die();
  */
 function qbank_supports(string $feature) {
     switch ($feature) {
-        case FEATURE_MOD_INTRO:
-        case FEATURE_USES_QUESTIONS:
         case FEATURE_BACKUP_MOODLE2:
         case FEATURE_PUBLISHES_QUESTIONS:
+        case FEATURE_SHOW_DESCRIPTION:
+        case FEATURE_USES_QUESTIONS:
             return true;
-        case FEATURE_GRADE_HAS_GRADE:
-        case FEATURE_MODEDIT_DEFAULT_COMPLETION:
+        case FEATURE_CAN_DISPLAY:
+        case FEATURE_COMMENT:
         case FEATURE_COMPLETION_HAS_RULES:
         case FEATURE_COMPLETION_TRACKS_VIEWS:
-        case FEATURE_GRADE_OUTCOMES:
-        case FEATURE_ADVANCED_GRADING:
         case FEATURE_CONTROLS_GRADE_VISIBILITY:
-        case FEATURE_COMMENT:
-        case FEATURE_RATE:
-        case FEATURE_SHOW_DESCRIPTION:
+        case FEATURE_GRADE_OUTCOMES:
+        case FEATURE_MODEDIT_DEFAULT_COMPLETION:
             return false;
         case FEATURE_MOD_PURPOSE:
             return MOD_PURPOSE_CONTENT;
