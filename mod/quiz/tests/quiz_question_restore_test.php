@@ -59,7 +59,7 @@ class quiz_question_restore_test extends \advanced_testcase {
      *
      * @covers \mod_quiz\question\bank\qbank_helper::get_question_structure
      */
-    public function test_quiz_restore_in_a_different_course_using_question_bank() {
+    public function test_quiz_restore_in_a_different_course_using_question_bank(): void {
         $this->resetAfterTest();
 
         // Create the test quiz.
