@@ -128,3 +128,6 @@ myisamproblem,core_error
 newpasswordtext,core
 cannotsetpassword,core_error
 configgeneralquestionbank,core_backup
+configgeneralquestionbank,core_backup
+cannotdeletecategoryquestions,core_error
+errordeletingquestionsfromcategory,core_question
