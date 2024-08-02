@@ -66,5 +66,8 @@ if ($createdefault) {
 $output = $PAGE->get_renderer('core_question', 'bank');
 
 echo $output->header();
+if (!\mod_qbank\task\transfer_question_categories::has_completed_successfully()) {
+    echo $OUTPUT->notification(get_string('transfernotfinished', 'mod_qbank'), \core\output\notification::NOTIFY_WARNING);
+}
 echo $output->render(new view_banks($sharedbanks, $privatebanks, $course));
 echo $output->footer();
