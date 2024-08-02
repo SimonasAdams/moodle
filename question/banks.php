@@ -66,5 +66,8 @@ if ($createdefault) {
 $output = $PAGE->get_renderer('core_question', 'bank');
 
 echo $output->header();
+if (!\mod_qbank\task\install::has_completed_successfully()) {
+    echo $OUTPUT->notification(get_string('installnotfinished', 'mod_qbank'), \core\output\notification::NOTIFY_WARNING);
+}
 echo $output->render(new view_banks($sharedbanks, $privatebanks, $course));
 echo $output->footer();
