@@ -885,7 +885,7 @@ class courselib_test extends advanced_testcase {
         $modname = $mod[$modid];
         $cmids = array();
         for ($i=0; $i<4; $i++) {
-            $cmids[$i] = $DB->insert_record('course_modules', array('course' => $course->id, 'module' => $modid));
+            $cmids[$i] = $DB->insert_record('course_modules', ['course' => $course->id, 'module' => $modid]);
         }
 
         // Add it to section that exists.
@@ -949,6 +949,7 @@ class courselib_test extends advanced_testcase {
         $this->assertEquals($sectionzero->section, $modsection->section);
 
         // Try to add to section 1.
+        $this->expectExceptionMessage("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0");
         course_add_cm_to_section($course, $cm->id, 1, null, 'qbank');
 
         // Assert still in section 0.
@@ -1363,6 +1364,11 @@ class courselib_test extends advanced_testcase {
         $this->assertTrue(in_array($cm->id, $newsequences));
     }
 
+    /**
+     * Ensure that qbank module which has feature flag FEATURE_CAN_DISPLAY set to false cannot be moved from section 0.
+     *
+     * @return void
+     */
     public function test_move_feature_cannot_display() {
         $this->resetAfterTest(true);
         // Setup fixture

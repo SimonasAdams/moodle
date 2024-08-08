@@ -604,7 +604,7 @@ function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = 
 
     // Modules not visible on the course must ALWAYS be in section 0.
     if ($sectionnum != 0 && !course_modinfo::is_mod_type_visible_on_course($modname)) {
-        $sectionnum = 0;
+        throw new moodle_exception("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0");
     }
 
     // Do not try to use modinfo here, there is no guarantee it is valid!

@@ -76,6 +76,11 @@ class question_bank_helper {
     public const RECENTLY_VIEWED = 'recently_viewed_open_banks';
 
     /**
+     * Category delimiter used by the SQL to group concatenate question category data.
+     */
+    private const CATEGORY_DELIMITER = "'<->'";
+
+    /**
      * Modules that share questions via FEATURE_PUBLISHES_QUESTIONS.
      *
      * @return array
@@ -133,7 +138,7 @@ class question_bank_helper {
         bool $getcategories = false,
         int $currentbankid = 0,
     ): array {
-        return self::get_instance_records(self::SHARED,
+        return self::get_bank_instances(self::SHARED,
             $incourseids,
             $notincourseids,
             $getcategories,
@@ -160,7 +165,7 @@ class question_bank_helper {
         bool $getcategories = false,
         int $currentbankid = 0,
     ): array {
-        return self::get_instance_records(self::PRIVATE,
+        return self::get_bank_instances(self::PRIVATE,
             $incourseids,
             $notincourseids,
             $getcategories,
@@ -182,7 +187,7 @@ class question_bank_helper {
      * @param array $havingcap
      * @return stdClass[]
      */
-    private static function get_instance_records(
+    private static function get_bank_instances(
         string $type,
         array $incourseids = [],
         array $notincourseids = [],
@@ -192,13 +197,28 @@ class question_bank_helper {
     ): array {
         global $DB;
 
-        $plugins = $type === self::SHARED ?
-            self::get_activity_types_with_shareable_questions() :
-            self::get_activity_types_with_private_questions();
-
         $pluginssql = [];
         $params = [];
 
+        // Build the SELECT portion of the SQL and include question category joins as required.
+        if ($getcategories) {
+            $concat = $DB->sql_concat('qc.id', self::CATEGORY_DELIMITER, 'qc.name', self::CATEGORY_DELIMITER, 'qc.contextid');
+            $groupconcat = $DB->sql_group_concat($concat, ',');
+            $select = "SELECT cm.*, {$groupconcat} AS cats";
+            $catsql = ' JOIN {context} c ON c.instanceid = cm.id AND c.contextlevel = ' . CONTEXT_MODULE .
+                ' JOIN {question_categories} qc ON qc.contextid = c.id AND qc.parent <> 0';
+        } else {
+            $select = 'SELECT cm.*';
+            $catsql = '';
+        }
+
+        if ($type === self::SHARED) {
+            $plugins = self::get_activity_types_with_shareable_questions();
+        } else {
+            $plugins = self::get_activity_types_with_private_questions();
+        }
+
+        // Build the joins for all modules of the type requested i.e. those that do or do not share questions.
         foreach ($plugins as $key => $plugin) {
             $moduleid = $DB->get_field('modules', 'id', ['name' => $plugin]);
             $sql = "JOIN {{$plugin}} p{$key} ON p{$key}.id = cm.instance
@@ -210,15 +230,7 @@ class question_bank_helper {
         }
         $pluginssql = implode(' ', $pluginssql);
 
-        if ($getcategories) {
-            $select = 'SELECT cm.*,' . $DB->sql_group_concat($DB->sql_concat('qc.id', "'<->'", 'qc.name', "'<->'", 'qc.contextid'), ',') . 'AS cats';
-            $catsql = ' JOIN {context} c ON c.instanceid = cm.id AND c.contextlevel = ' . CONTEXT_MODULE .
-                ' JOIN {question_categories} qc ON qc.contextid = c.id AND qc.parent <> 0';
-        } else {
-            $select = 'SELECT cm.*';
-            $catsql = '';
-        }
-
+        // Build the SQL to filter out any requested course ids.
         if (!empty($notincourseids)) {
             [$notincoursesql, $notincourseparams] = $DB->get_in_or_equal($notincourseids, SQL_PARAMS_QM, 'param', false);
             $notincoursesql = "AND cm.course {$notincoursesql}";
@@ -227,6 +239,7 @@ class question_bank_helper {
             $notincoursesql = '';
         }
 
+        // Build the SQL to include ONLY records belonging to the requested courses.
         if (!empty($incourseids)) {
             [$incoursesql, $incourseparams] = $DB->get_in_or_equal($incourseids);
             $incoursesql = " AND cm.course {$incoursesql}";
@@ -235,6 +248,7 @@ class question_bank_helper {
             $incoursesql = '';
         }
 
+        // Optionally order the results by the requested bank id.
         if (!empty($currentbankid)) {
             $orderbysql = " ORDER BY CASE WHEN cm.id = ? THEN 0 ELSE 1 END ASC, cm.id DESC ";
             $params[] = $currentbankid;
@@ -252,18 +266,22 @@ class question_bank_helper {
                 {$orderbysql}";
 
         $rs = $DB->get_recordset_sql($sql, $params);
+        $banks = [];
 
         foreach ($rs as $cm) {
+            // If capabilities have been supplied as a method argument then ensure the viewing user has at least one of those
+            // capabilities on the module itself.
             if (!empty($havingcap)) {
                 $context = \context_module::instance($cm->id);
                 if (!(new question_edit_contexts($context))->have_one_cap($havingcap)) {
                     continue;
                 }
             }
-            $toreturn[] = self::get_return_object($cm, $currentbankid);
+            // Populate the raw record.
+            $banks[] = self::get_formatted_bank($cm, $currentbankid);
         }
 
-        return $toreturn ?? [];
+        return $banks;
     }
 
     /**
@@ -281,6 +299,7 @@ class question_bank_helper {
             return $contextids;
         }
         $invalidcontexts = [];
+        $banks = [];
 
         foreach ($contextids as $contextid) {
             if (!$context = \context::instance_by_id($contextid, IGNORE_MISSING)) {
@@ -294,8 +313,8 @@ class question_bank_helper {
             if (!empty($notincourseid) && $notincourseid == $cm->course) {
                 continue;
             }
-            $record = self::get_return_object($cm);
-            $toreturn[] = $record;
+            $record = self::get_formatted_bank($cm);
+            $banks[] = $record;
         }
 
         if (!empty($invalidcontexts)) {
@@ -304,7 +323,7 @@ class question_bank_helper {
             set_user_preference(self::RECENTLY_VIEWED, $tostore, $userid);
         }
 
-        return $toreturn ?? [];
+        return $banks;
     }
 
     /**
@@ -313,7 +332,7 @@ class question_bank_helper {
      * @param int $currentbankid
      * @return stdClass
      */
-    private static function get_return_object(stdClass $cm, int $currentbankid = 0): stdClass {
+    private static function get_formatted_bank(stdClass $cm, int $currentbankid = 0): stdClass {
 
         $cminfo = cm_info::create($cm);
         $concatedcats = !empty($cm->cats) ? explode(',', $cm->cats) : [];
@@ -344,20 +363,28 @@ class question_bank_helper {
      *
      * @param stdClass $course
      * @param bool $createifnotexists
-     * @return cm_info|false
+     * @return cm_info|null
      */
-    public static function get_default_open_instance_system_type(stdClass $course, bool $createifnotexists = false): cm_info|false {
+    public static function get_default_open_instance_system_type(stdClass $course, bool $createifnotexists = false): ?cm_info {
+        global $DB;
 
         $modinfo = get_fast_modinfo($course);
         $qbanks = $modinfo->get_instances_of('qbank');
+        $modqbankids = array_map(static fn($bank) => $bank->instance, $qbanks);
 
-        $qbanks = array_filter($qbanks, static function($qbank) {
-            global $DB;
-            return $DB->record_exists('qbank', ['id' => $qbank->instance, 'type' => self::SYSTEM]);
-        });
+        if (!empty($modqbankids)) {
+            [$insql, $params] = $DB->get_in_or_equal($modqbankids);
+            $params[] = self::SYSTEM;
+            $sql = "SELECT *
+                    FROM {qbank}
+                    WHERE id {$insql}
+                    AND type = ?";
 
-        // Should only be one of these so return the first anyway.
-        $qbank = reset($qbanks);
+            // There should only ever be one SYSTEM type on the course so throw an exception if there isn't.
+            $qbank = $DB->get_record_sql($sql, $params);
+        } else {
+            $qbank = null;
+        }
 
         if (!$qbank && $createifnotexists) {
             $qbank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);

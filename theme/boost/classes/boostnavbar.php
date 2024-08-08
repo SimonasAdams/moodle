@@ -46,6 +46,9 @@ class boostnavbar implements \renderable {
         foreach ($this->page->navbar->get_items() as $item) {
             $this->items[] = $item;
         }
+        $hook = new \theme_boost\hook\before_navbar_prepare_nodes_for_boost($this->items, $this->page);
+        $hooked = \core\di::get(\core\hook\manager::class)->dispatch($hook);
+        $this->items = $hooked->items;
         $this->prepare_nodes_for_boost();
     }
 
@@ -109,8 +112,6 @@ class boostnavbar implements \renderable {
         if ($this->page->context->contextlevel == CONTEXT_MODULE) {
             $this->remove('mycourses');
             $this->remove('courses');
-            // Allow the module to override the items list.
-            $this->items = component_callback($this->page->cm->modname, 'extend_navbar_items', [$this->get_items()], $this->items);
             // Remove the course category breadcrumb nodes.
             foreach ($this->items as $key => $item) {
                 // Remove if it is a course category breadcrumb node.

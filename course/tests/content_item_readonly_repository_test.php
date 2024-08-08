@@ -53,7 +53,7 @@ class content_item_readonly_repository_test extends \advanced_testcase {
             $this->assertEquals($course->id, $item->get_link()->param('id'));
             $this->assertNotNull($item->get_link()->param('add'));
 
-            // We should never get any, where FEATURE_CAN_DISPLAY is false.
+            // We should never get an instance of mod_qbank, as they have FEATURE_CAN_DISPLAY set to false.
             if ($item->get_component_name() === 'mod_qbank') {
                 $modqbankfound = true;
             }
@@ -121,11 +121,9 @@ class content_item_readonly_repository_test extends \advanced_testcase {
         });
         $this->assertCount(1, $all);
 
-        // We should never get any, where FEATURE_CAN_DISPLAY is false.
+        // We should never get an instance of mod_qbank, as they have FEATURE_CAN_DISPLAY set to false.
         $all = $cir->find_all();
-        $all = array_filter($all, static function($contentitem) {
-            return str_contains($contentitem->get_component_name(), 'mod_qbank');
-        });
+        $all = array_filter($all, static fn($contentitem) => str_contains($contentitem->get_component_name(), 'mod_qbank'));
 
         $this->assertCount(0, $all);
     }
