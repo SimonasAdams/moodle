@@ -401,48 +401,90 @@ class question_bank_helper {
         $modqbankids = array_map(static fn($bank) => $bank->instance, $qbanks);
 
         if (!empty($modqbankids)) {
-            [$insql, $params] = $DB->get_in_or_equal($modqbankids);
-            $params[] = self::SYSTEM;
-            $sql = "SELECT *
-                    FROM {qbank}
-                    WHERE id {$insql}
-                    AND type = ?";
+            $sql = "SELECT cm.id
+                    FROM {course_modules} cm 
+                    JOIN {modules} m ON m.id = cm.module
+                    JOIN {qbank} q ON q.id = cm.instance AND cm.module = m.id
+                    WHERE cm.course = :course
+                    AND q.type = :type";
 
-            // There should only ever be one SYSTEM type on the course so throw an exception if there isn't.
-            $qbank = $DB->get_record_sql($sql, $params);
+            // There should only ever be one SYSTEM type on the course so throw an exception if there is more than one.
+            $sysbankid = $DB->get_field_sql($sql, ['type' => self::SYSTEM, 'course' => $course->id]);
+            $sysbanks = array_filter($qbanks, static fn($bank) => $bank->id === $sysbankid);
+            $sysbank = !empty($sysbanks) ? reset($sysbanks) : null;
         } else {
-            $qbank = null;
+            $sysbank = null;
         }
 
-        if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);
+        if (!$sysbank && $createifnotexists) {
+            $sysbank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);
         }
 
-        return $qbank;
+        return $sysbank;
     }
 
     /**
      * Get the bank that is used for preview purposes only {@see \qbank_columnsortorder\column_manager::get_questionbank()}
      *
      * @param bool $createifnotexists
-     * @return cm_info|false
+     * @return cm_info|null
      */
-    public static function get_preview_open_instance_type(bool $createifnotexists = false) {
-        $modinfo = get_fast_modinfo(get_site());
+    public static function get_preview_open_instance_type(bool $createifnotexists = false): ?cm_info {
+        global $DB;
+
+        $site = get_site();
+        $modinfo = get_fast_modinfo($site);
         $qbanks = $modinfo->get_instances_of('qbank');
-        $qbanks = array_filter($qbanks, static function($qbank) {
-            global $DB;
-            return $DB->record_exists('qbank', ['id' => $qbank->instance, 'type' => self::PREVIEW]);
-        });
+        $modqbankids = array_map(static fn($bank) => $bank->instance, $qbanks);
 
-        // Should only be one of these so return the first anyway.
-        $qbank = reset($qbanks);
+        if (!empty($modqbankids)) {
+            $sql = "SELECT cm.id
+                    FROM {course_modules} cm 
+                    JOIN {modules} m ON m.id = cm.module
+                    JOIN {qbank} q ON q.id = cm.instance AND cm.module = m.id
+                    WHERE cm.course = :course
+                    AND q.type = :type";
 
-        if (!$qbank && $createifnotexists) {
-            $qbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::PREVIEW);
+            // There should only ever be one PREVIEW type on the site so throw an exception if there is more than one.
+            $previewbankid = $DB->get_field_sql($sql, ['type' => self::PREVIEW, 'course' => $site->id]);
+            $previewbanks = array_filter($qbanks, static fn($bank) => $bank->id === $previewbankid);
+            $previewbank = !empty($previewbanks) ? reset($previewbanks) : null;
+        } else {
+            $previewbank = null;
         }
 
-        return $qbank;
+        if (!$previewbank && $createifnotexists) {
+            $previewbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::PREVIEW);
+        }
+
+        return $previewbank;
+    }
+
+    private function get_bank_of_type(stdClass $course, string $type): ?cm_info {
+
+        if ($type !== self::SYSTEM || $type !== self::PREVIEW) {
+            throw new \moodle_exception('Invalid question bank type: ' . $type);
+        }
+
+        $modinfo = get_fast_modinfo($course);
+        $qbanks = $modinfo->get_instances_of('qbank');
+        $modqbankids = array_map(static fn($bank) => $bank->instance, $qbanks);
+
+        if (!empty($modqbankids)) {
+            $sql = "SELECT cm.id
+                    FROM {course_modules} cm 
+                    JOIN {modules} m ON m.id = cm.module
+                    JOIN {qbank} q ON q.id = cm.instance AND cm.module = m.id
+                    WHERE cm.course = :course
+                    AND q.type = :type";
+
+            // There should only ever be one PREVIEW type on the site so throw an exception if there is more than one.
+            $previewbankid = $DB->get_field_sql($sql, ['type' => $type, 'course' => $site->id]);
+            $previewbanks = array_filter($qbanks, static fn($bank) => $bank->id === $previewbankid);
+            $previewbank = !empty($previewbanks) ? reset($previewbanks) : null;
+        } else {
+            $previewbank = null;
+        }
     }
 
     /**
