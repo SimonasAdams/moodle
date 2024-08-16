@@ -14,17 +14,28 @@ Feature: A teacher can put questions with idnumbers in categories with idnumbers
     And the following "course enrolments" exist:
       | user     | course | role           |
       | teacher1 | C1     | editingteacher |
+    And the following "activities" exist:
+      | activity   | name    | course | idnumber |
+      | qbank      | Qbank 1 | C1     | qbank1   |
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
 
   Scenario: A new question category can only be created with a unique idnumber for a context
     # Note need to create the top category each time.
     When the following "question categories" exist:
+<<<<<<< HEAD
       | contextlevel | reference | questioncategory | name          | idnumber |
       | Course       | C1        | Top              | top           |          |
       | Course       | C1        | top              | Used category | c1used   |
     And I am on the "Course 1" "core_question > course question categories" page
     And I press "Add category"
+=======
+      | contextlevel    | reference | questioncategory | name           | idnumber |
+      | Activity module | qbank1    | Top              | top            |          |
+      | Activity module | qbank1    | top              | Used category  | c1used   |
+    And I am on the "Qbank 1" "core_question > question categories" page
+    And I follow "Add category"
+>>>>>>> 411b59bd407 (MDL-71378 core_question & mod_quiz: Refactor deprecated contexts)
     And I set the following fields to these values:
       | Name            | New cat           |
       | Parent category | Top for Course 1  |
@@ -45,6 +56,7 @@ Feature: A teacher can put questions with idnumbers in categories with idnumbers
 
   Scenario: A question category can be edited and saved without changing the idnumber
     When the following "question categories" exist:
+<<<<<<< HEAD
       | contextlevel | reference | questioncategory | name          | idnumber |
       | Course       | C1        | Top              | top           |          |
       | Course       | C1        | top              | Used category | c1used   |
@@ -52,4 +64,12 @@ Feature: A teacher can put questions with idnumbers in categories with idnumbers
     Then I open the action menu in "Used category" "list_item"
     And I choose "Edit settings" in the open action menu
     And I click on "Save changes" "button" in the "Edit category" "dialogue"
+=======
+      | contextlevel    | reference | questioncategory | name           | idnumber |
+      | Activity module | qbank1    | Top              | top            |          |
+      | Activity module | qbank1    | top              | Used category  | c1used   |
+    And I am on the "Qbank 1" "core_question > question categories" page
+    And I click on "Edit this category" "link" in the "Used category" "list_item"
+    And I press "Save changes"
+>>>>>>> 411b59bd407 (MDL-71378 core_question & mod_quiz: Refactor deprecated contexts)
     Then I should not see "This ID number is already in use"

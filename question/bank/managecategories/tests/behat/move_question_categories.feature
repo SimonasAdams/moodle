@@ -99,3 +99,16 @@ Feature: A teacher can reorder question categories
     And I choose "Move" in the open action menu
     And I click on "After Course category 1" "link" in the "Move Course category 2" "dialogue"
     And I should see "ID number already in use, please change it to move or update category"
+
+  Scenario: A question category can be moved to top level
+    Given I am on the "Test quiz" "mod_quiz > question bank" page logged in as "teacher1"
+    And I select "Categories" from the "Question bank tertiary navigation" singleselect
+    And I follow "Add category"
+    And I set the following fields to these values:
+      | Name            | Test category         |
+      | Parent category | Default for Test quiz |
+      | Category info   | Created as a test     |
+    And I press "submitbutton"
+    And I click on "Move to top level" "link" in the "Test category" "list_item"
+    Then I should see "Test category" in the "//div[contains(concat(' ', normalize-space(@class), ' '), ' questioncategories ') and contains(concat(' ', normalize-space(@class), ' '), ' contextlevel70 ')]" "xpath_element"
+    And "//div[contains(concat(' ', normalize-space(@class), ' '), ' questioncategories ') and contains(concat(' ', normalize-space(@class), ' '), ' contextlevel70 ')]//li//ul" "xpath_element" should not exist
