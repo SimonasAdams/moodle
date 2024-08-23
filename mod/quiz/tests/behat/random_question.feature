@@ -71,7 +71,8 @@ Feature: Moving a question to another category should not affect random question
     And I press "Add random question"
     And I should see "Random question based on filter condition" on quiz page "1"
     And I am on the "Qbank 1" "core_question > question categories" page
-    And I click on "Edit this category" "link" in the "Used category" "list_item"
+    And I open the action menu in "Used category" "list_item"
+    And I choose "Edit" in the open action menu
     And I set the following fields to these values:
       | Name            | Used category new |
       | Category info   | I was edited      |

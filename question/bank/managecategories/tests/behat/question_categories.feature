@@ -33,7 +33,7 @@ Feature: A teacher can put questions in categories in the question bank
 
   Scenario: A new question category can be created
     When I am on the "Qbank 1" "core_question > question categories" page
-    And I follow "Add category"
+    And I press "Add category"
     And I set the following fields to these values:
       | Name            | 'Test' & 'display'                                       |
       | Parent category | Default & testing                                        |
@@ -55,7 +55,8 @@ Feature: A teacher can put questions in categories in the question bank
     And the following "questions" exist:
       | questioncategory | qtype | name                                | questiontext                  |
       | Subcategory      | essay | Test question for renaming category | Write about whatever you want |
-    And I click on "Edit this category" "link" in the "Subcategory" "list_item"
+    And I open the action menu in "Subcategory" "list_item"
+    And I choose "Edit settings" in the open action menu
     And the field "parent" matches value "&nbsp;&nbsp;&nbsp;Default for qbank1"
     And I set the following fields to these values:
       | Name            | New name     |
@@ -81,7 +82,7 @@ Feature: A teacher can put questions in categories in the question bank
     And I select "Default for qbank1" from the "Category" singleselect
     And I press "Save in category"
     Then I should not see "Used category"
-    And I follow "Add category"
+    And I press "Add category"
     And I should see "Default for qbank1 (1)"
 
   @_file_upload
