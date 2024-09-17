@@ -34,27 +34,27 @@ Feature: Moving a question to another category should not affect random question
     Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
     When I open the "last" add to quiz menu
     And I follow "a random question"
-    Then I click on "Switch bank" "button"
-    And I click on "Qbank 1" "link"
+    And I click on "Switch bank" "button"
+    And I click on "Qbank 1" "link" in the "Select question bank" "dialogue"
     And I apply question bank filter "Category" with value "Used category"
     And I press "Add random question"
     And I should see "Random (Used category) based on filter condition" on quiz page "1"
     And I click on "Configure question" "link" in the "Random (Used category) based on filter condition" "list_item"
     And I should see "Used category"
     And I am on "Course 1" course homepage
-    And I navigate to "Question bank" in current page administration
+    And I navigate to "Question banks" in current page administration
     And I click on "Qbank 1" "link"
     And I apply question bank filter "Category" with value "Used category"
     And I click on "Test question to be moved" "checkbox" in the "Test question to be moved" "table_row"
     And I click on "With selected" "button"
     And I click on question bulk action "move"
-    When I open the autocomplete suggestions list in the ".search-categories" "css_element"
+    And I open the autocomplete suggestions list in the ".search-categories" "css_element"
     And I click on "Subcategory" item in the autocomplete list
     And I click on "Move questions" "button"
-    Then I should see "Are you sure you want to move these questions?"
+    And I should see "Are you sure you want to move these questions?"
     And I click on "Confirm" "button"
     And I wait until the page is ready
-    And I should see "Subcategory (1)"
+    Then I should see "Subcategory (1)"
     And I am on the "Quiz 1" "mod_quiz > Edit" page
     And I should see "Random (Used category) based on filter condition" on quiz page "1"
     And I click on "Configure question" "link" in the "Random (Used category) based on filter condition" "list_item"
@@ -66,7 +66,7 @@ Feature: Moving a question to another category should not affect random question
     When I open the "last" add to quiz menu
     And I follow "a random question"
     Then I click on "Switch bank" "button"
-    And I click on "Qbank 1" "link"
+    And I click on "Qbank 1" "link" in the "Select question bank" "dialogue"
     And I apply question bank filter "Category" with value "Used category"
     And I press "Add random question"
     And I should see "Random (Used category) based on filter condition" on quiz page "1"

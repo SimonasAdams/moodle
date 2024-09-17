@@ -28,8 +28,8 @@ Feature: A teacher can reorder question categories
     And I am on the "Course 1" "core_question > course question categories" page logged in as "teacher1"
 
   Scenario: Teacher cannot move or delete single category under context
-    When I am on the "Qbank 1" "core_question > question categories" page logged in as "teacher1"
-    And I open the action menu in "Default for Qbank 1" "list_item"
+    Given I am on the "Qbank 1" "core_question > question categories" page logged in as "teacher1"
+    When I open the action menu in "Default for Qbank 1" "list_item"
     Then I should not see "Delete"
 
   Scenario: Teacher can see complete edit menu if multiples categories exist under context

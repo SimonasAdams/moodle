@@ -41,7 +41,7 @@ Feature: Use the qbank plugin manager page for question history
 
   @javascript
   Scenario: Viewing history for a question in a non-default category
-    And the following "question categories" exist:
+    Given the following "question categories" exist:
       | contextlevel    | reference | name             |
       | Activity module | quiz1    | Test questions 2 |
     And the following "questions" exist:

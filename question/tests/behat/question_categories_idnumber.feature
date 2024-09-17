@@ -82,10 +82,10 @@ Feature: A teacher can put questions with idnumbers in categories in the questio
     And I click on "Test question 3" "checkbox" in the "Test question 3" "table_row"
     And I click on "With selected" "button"
     And I click on question bulk action "move"
-    When I open the autocomplete suggestions list in the ".search-categories" "css_element"
+    And I open the autocomplete suggestions list in the ".search-categories" "css_element"
     And I click on "Used category" item in the autocomplete list
     And I click on "Move questions" "button"
-    Then I should see "Are you sure you want to move these questions?"
+    And I should see "Are you sure you want to move these questions?"
     And I click on "Confirm" "button"
     And I wait until the page is ready
     And I choose "Edit question" action for "Test question 3" in the question bank

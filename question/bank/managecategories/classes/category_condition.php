@@ -84,7 +84,7 @@ class category_condition extends condition {
      */
     public function get_default_category(): \stdClass {
         if (empty($this->category)) {
-            return question_get_default_category(\context_module::instance($this->cm->id));
+            return question_get_default_category(\context_module::instance($this->cm->id)->id, true);
         }
 
         return $this->category;
