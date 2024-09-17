@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - https://moodle.org/
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,10 +12,10 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin strings are defined here.
+ * This redirect to /question/banks.php to list all the instances of mod_qbank in a particular course.
  *
  * @package     mod_qbank
  * @copyright   2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
@@ -23,5 +23,14 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['pluginname'] = 'Question bank';
-$string['privacy:metadata'] = 'The Question bank plugin does not store any personal data, core_question automatically tracks all sorts of data for questions.';
+require_once("../../config.php");
+
+$id = required_param('id', PARAM_INT);
+$course = get_course($id);
+require_login($course);
+
+$event = \mod_qbank\event\course_module_instance_list_viewed::create(['context' => context_course::instance($id)]);
+$event->trigger();
+
+// Redirect to /question/banks.php as that page shows all the available banks on the course.
+redirect(new moodle_url('/question/banks.php', ['courseid' => $course->id]));

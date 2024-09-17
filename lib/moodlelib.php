@@ -457,6 +457,9 @@ define('FEATURE_PUBLISHES_QUESTIONS', 'publishesquestions');
 /** Used to determine if a plugin should render to display */
 define('FEATURE_CAN_DISPLAY', 'candisplay');
 
+/** Can this module type be uninstalled */
+define('FEATURE_CAN_UNINSTALL', 'canuninstall');
+
 /** True if module can show description on course main page */
 define('FEATURE_SHOW_DESCRIPTION', 'showdescription');
 
