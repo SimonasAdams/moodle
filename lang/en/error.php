@@ -663,4 +663,6 @@ $string['unknownhelp'] = 'Unknown help section {$a}';
 // Deprecated since Moodle 4.5.
 $string['cannotsetpassword'] = 'Could not set user password!';
 $string['myisamproblem'] = 'Database tables are using MyISAM database engine, it is recommended to use ACID compliant engine with full transaction support such as InnoDB.';
+
+// Deprecated since Moodle 4.6.
 $string['cannotdeletecategoryquestions'] = 'Could not delete questions from category \'{$a}\'';

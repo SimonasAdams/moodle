@@ -8,8 +8,7 @@ notes:
         No longer creates a default category in either CONTEXT_SYSTEM,
         CONTEXT_COURSE, or CONTEXT_COURSECAT.
 
-        Superceded by question_make_default_category which only accepts
-        CONTEXT_MODULE.
+        Superceded by question_get_default_category which can optionally create one if it does not exist.
       type: deprecated
     - message: |
         question_delete_course()

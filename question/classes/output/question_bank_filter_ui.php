@@ -114,7 +114,7 @@ class question_bank_filter_ui extends datafilter {
      * @return stdClass Data in a format compatible with a mustache template.
      */
     public function export_for_template(renderer_base $output): stdClass {
-        $defaultcategory = question_get_default_category($this->context->id);
+        $defaultcategory = question_get_default_category($this->context->id, true);
 
         if ($this->context->contextlevel != CONTEXT_MODULE) {
             debugging("Context level: {$this->context->contextlevel} is now deprecated, please use CONTEXT_MODULE");

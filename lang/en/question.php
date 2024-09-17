@@ -530,5 +530,5 @@ $string['versioninfo'] = 'Version {$a->version} (of {$a->latestversion})';
 $string['versioninfolatest'] = 'Version {$a->version} (latest)';
 $string['question_version'] = 'Question version';
 
-// Deprecated since Moodle 4.5.
+// Deprecated since Moodle 4.6.
 $string['errordeletingquestionsfromcategory'] = 'Error deleting questions from category {$a}.';

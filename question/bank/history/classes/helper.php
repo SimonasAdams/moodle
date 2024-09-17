@@ -34,10 +34,10 @@ class helper {
      * @param int $courseid id of the course
      * @param ?string $filter filter param to pass to the History view
      * @return \moodle_url
-     * @deprecated since Moodle 4.5.
+     * @deprecated since Moodle 4.6.
      * @todo MDL-82413 Final deprecation in Moodle 6.0.
      */
-    #[\core\attribute\deprecated(replacement: 'qbank_history\helper::get_question_history_url', since: '4.5', mdl: 'MDL-71378')]
+    #[\core\attribute\deprecated(replacement: 'qbank_history\helper::get_question_history_url', since: '4.6', mdl: 'MDL-71378')]
     public static function question_history_url(int $entryid, string $returnrul, int $courseid, ?string $filter): \moodle_url {
         \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
         $params = [

@@ -106,10 +106,10 @@ abstract class base extends area_base {
      * question categories at the system context only.
      *
      * @return \moodle_recordset
-     * @deprecated since Moodle 4.5.
+     * @deprecated since Moodle 4.6.
      * @todo MDL-82413 Final deprecation in Moodle 6.0.
      */
-    #[\core\attribute\deprecated(null, since: '4.5', reason: 'This method should not be used', mdl: 'MDL-71378')]
+    #[\core\attribute\deprecated(null, since: '4.6', reason: 'This method should not be used', mdl: 'MDL-71378')]
     public function find_system_areas(): ?\moodle_recordset {
         \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
         global $DB;

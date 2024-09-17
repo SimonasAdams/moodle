@@ -37,16 +37,14 @@ use qbank_managecategories\question_categories;
 require_login();
 core_question\local\bank\helper::require_plugin_enabled(helper::PLUGINNAME);
 
+if ($courseid = optional_param('courseid', 0, PARAM_INT)) {
+    redirect(new moodle_url('/question/banks.php', ['courseid' => $courseid]));
+}
+
 list($thispageurl, $contexts, $cmid, $cm, $module, $pagevars) =
     question_edit_setup('categories', '/question/bank/managecategories/category.php');
-$courseid = optional_param('courseid', 0, PARAM_INT);
 
-if (!is_null($cmid)) {
-    $thiscontext = context_module::instance($cmid)->id;
-} else {
-    $course = get_course($courseid);
-    $thiscontext = context_course::instance($course->id)->id;
-}
+$thiscontext = context_module::instance($cmid)->id;
 
 $todelete = optional_param('delete', 0, PARAM_INT); // The ID of a category to delete.
 
