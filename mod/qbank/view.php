@@ -24,8 +24,9 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
-global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
+
+require_login();
 
 $context = context_module::instance(required_param('id', PARAM_INT));
 redirect(question_edit_url($context));

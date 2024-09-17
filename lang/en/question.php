@@ -114,6 +114,7 @@ $string['deletingbehaviour'] = 'Deleting question behaviour \'{$a}\'';
 $string['deletingqtype'] = 'Deleting question type \'{$a}\'';
 $string['didnotmatchanyanswer'] = '[Did not match any answer]';
 $string['disabled'] = 'Disabled';
+$string['disabledbanks'] = 'One or more question bank module types are disabled.';
 $string['disterror'] = 'The distribution {$a} caused problems';
 $string['donothing'] = 'Don\'t copy or move files or change links.';
 $string['editcategories'] = 'Edit categories';
