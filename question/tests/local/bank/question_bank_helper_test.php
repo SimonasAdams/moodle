@@ -37,7 +37,7 @@ class question_bank_helper_test extends \advanced_testcase {
      */
     public function test_get_shareable_modules(): void {
         $openmods = question_bank_helper::get_activity_types_with_shareable_questions();
-        $this->assertGreaterThanOrEqual(1, $openmods);
+        $this->assertGreaterThanOrEqual(1, count($openmods));
         $this->assertContains('qbank', $openmods);
         $this->assertNotContains('quiz', $openmods);
     }
@@ -50,7 +50,7 @@ class question_bank_helper_test extends \advanced_testcase {
      */
     public function test_get_private_modules(): void {
         $closedmods = question_bank_helper::get_activity_types_with_private_questions();
-        $this->assertGreaterThanOrEqual(1, $closedmods);
+        $this->assertGreaterThanOrEqual(1, count($closedmods));
         $this->assertContains('quiz', $closedmods);
         $this->assertNotContains('qbank', $closedmods);
     }
@@ -174,21 +174,21 @@ class question_bank_helper_test extends \advanced_testcase {
         $this->assertEquals($course->fullname, $cminfo->get_name());
         $this->assertEquals(0, $cminfo->sectionnum);
         $modrecord = $DB->get_record('qbank', ['id' => $cminfo->instance]);
-        $this->assertEquals(question_bank_helper::STANDARD, $modrecord->type);
+        $this->assertEquals(question_bank_helper::TYPE_STANDARD, $modrecord->type);
         $this->assertEmpty($cminfo->idnumber);
         $this->assertEmpty($cminfo->content);
 
         // Create a system type bank.
-        question_bank_helper::create_default_open_instance($course, 'System bank 1', question_bank_helper::SYSTEM);
+        question_bank_helper::create_default_open_instance($course, 'System bank 1', question_bank_helper::TYPE_SYSTEM);
 
         // Try and create another system type bank.
-        question_bank_helper::create_default_open_instance($course, 'System bank 2', question_bank_helper::SYSTEM);
+        question_bank_helper::create_default_open_instance($course, 'System bank 2', question_bank_helper::TYPE_SYSTEM);
 
         $modinfo = get_fast_modinfo($course);
         $cminfos = $modinfo->get_instances_of('qbank');
         $cminfos = array_filter($cminfos, static function($cminfo) {
             global $DB;
-            return $DB->record_exists('qbank', ['id' => $cminfo->instance, 'type' => question_bank_helper::SYSTEM]);
+            return $DB->record_exists('qbank', ['id' => $cminfo->instance, 'type' => question_bank_helper::TYPE_SYSTEM]);
         });
 
         // Can only be 1 system 'type' bank per course.
@@ -225,7 +225,7 @@ class question_bank_helper_test extends \advanced_testcase {
 
         // Trigger bank view on each of them.
         foreach ($banks as $bank) {
-            $cat = question_get_default_category(\context_module::instance($bank->cmid)->id);
+            $cat = question_get_default_category(\context_module::instance($bank->cmid)->id, true);
             $context = \context::instance_by_id($cat->contextid);
             question_bank_helper::add_bank_context_to_recently_viewed($context);
         }
@@ -244,7 +244,7 @@ class question_bank_helper_test extends \advanced_testcase {
         }
 
         // Now if we view one of those again it should get bumped to the front of the list.
-        $bank3cat = question_get_default_category(\context_module::instance($banks[2]->cmid)->id);
+        $bank3cat = question_get_default_category(\context_module::instance($banks[2]->cmid)->id, true);
         $bank3context = \context::instance_by_id($bank3cat->contextid);
         question_bank_helper::add_bank_context_to_recently_viewed($bank3context);
 
@@ -262,7 +262,7 @@ class question_bank_helper_test extends \advanced_testcase {
 
         // Now create a quiz and trigger the bank view of it.
         $quiz = self::getDataGenerator()->get_plugin_generator('mod_quiz')->create_instance(['course' => $course1]);
-        $quizcat = question_get_default_category(\context_module::instance($quiz->cmid)->id);
+        $quizcat = question_get_default_category(\context_module::instance($quiz->cmid)->id, true);
         $quizcontext = \context::instance_by_id($quizcat->contextid);
         question_bank_helper::add_bank_context_to_recently_viewed($quizcontext);
 
@@ -308,6 +308,6 @@ class question_bank_helper_test extends \advanced_testcase {
         $qbank = question_bank_helper::get_default_open_instance_system_type($course, true);
         $this->assertEquals(get_string('systembank', 'mod_qbank'), $qbank->get_name());
         $modrecord = $DB->get_record('qbank', ['id' => $qbank->instance]);
-        $this->assertEquals(question_bank_helper::SYSTEM, $modrecord->type);
+        $this->assertEquals(question_bank_helper::TYPE_SYSTEM, $modrecord->type);
     }
 }

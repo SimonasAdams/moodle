@@ -552,8 +552,10 @@ function course_create_sections_if_missing($courseorid, $sections) {
  *      to see if this module type can be displayed to the course page.
  *      If not passed a DB query will need to be run instead.
  * @return int The course_sections ID where the module is inserted
+ * @throws moodle_exception if a module that has feature flag FEATURE_CAN_DISPLAY set to false is attempted to be moved to
+ * a section number other than 0.
  */
-function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = null, $modname = '') {
+function course_add_cm_to_section(int|stdclass $courseorid, $cmid, $sectionnum, $beforemod = null, string $modname = '') {
     global $DB, $COURSE;
     if (is_object($beforemod)) {
         $beforemod = $beforemod->id;
@@ -566,9 +568,9 @@ function course_add_cm_to_section($courseorid, $cmid, $sectionnum, $beforemod = 
 
     if (!$modname) {
         $sql = "SELECT name
-                FROM {modules} m
-                JOIN {course_modules} cm ON cm.module = m.id
-                WHERE cm.id = :cmid";
+                  FROM {modules} m
+                  JOIN {course_modules} cm ON cm.module = m.id
+                 WHERE cm.id = :cmid";
         $modname = $DB->get_field_sql($sql, ['cmid' => $cmid], MUST_EXIST);
     }
 
@@ -1312,7 +1314,7 @@ function moveto_module($mod, $section, $beforemod=NULL) {
     global $OUTPUT, $DB;
 
     if ($section->section != 0 && !course_modinfo::is_mod_type_visible_on_course($mod->modname)) {
-        throw new moodle_exception("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0");
+        throw new coding_exception("Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0");
     }
 
     // Current module visibility state - return value of this function.
@@ -3094,7 +3096,9 @@ function duplicate_module($course, $cm, ?int $sectionid = null, bool $changename
 
     // Plugins with this feature flag set to false must ALWAYS be in section 0.
     if (!course_modinfo::is_mod_type_visible_on_course($cm->modname)) {
-        $sectionid = get_fast_modinfo($course)->get_section_info(0, MUST_EXIST)->id;
+        if (get_fast_modinfo($course)->get_section_info(0, MUST_EXIST)->id != $sectionid) {
+            throw new coding_exception('Modules with FEATURE_CAN_DISPLAY set to false can not be moved from section 0');
+        }
     }
 
     $a          = new stdClass();

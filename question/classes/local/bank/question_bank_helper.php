@@ -24,7 +24,6 @@ use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG;
 require_once($CFG->dirroot . '/lib/questionlib.php');
 require_once($CFG->dirroot . '/course/modlib.php');
 
@@ -37,15 +36,8 @@ require_once($CFG->dirroot . '/course/modlib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class question_bank_helper {
-
-    /** @var array Array of shareable question bank modules keyed by the {modules} table id and the modname as the value.*/
-    private static array $sharedmods = [];
-
-    /** @var array Array of non-shareable question bank modules keyed by the {modules} table id and the modname as the value.*/
-    private static array $privatemods = [];
-
     /** @var string the type of qbank module that users create */
-    public const STANDARD = 'standard';
+    public const TYPE_STANDARD = 'standard';
 
     /**
      * The type of shared bank module that the system creates.
@@ -54,27 +46,18 @@ class question_bank_helper {
      *
      * @var string
      */
-    public const SYSTEM = 'system';
+    public const TYPE_SYSTEM = 'system';
 
     /** @var string The type of shared bank module that the system creates for previews. Not used for any other purpose. */
-    public const PREVIEW = 'preview';
+    public const TYPE_PREVIEW = 'preview';
 
     /** @var array Shared bank types */
-    public const SHARED_TYPES = [self::STANDARD, self::SYSTEM, self::PREVIEW];
-
-    /** @var string Shareable plugin type */
-    public const SHARED = 'shared';
-
-    /** @var string Non-shareable plugin type */
-    public const PRIVATE = 'private';
-
-    /** Plugin types */
-    public const PLUGIN_TYPES = [self::SHARED, self::PRIVATE];
+    public const SHARED_TYPES = [self::TYPE_STANDARD, self::TYPE_SYSTEM, self::TYPE_PREVIEW];
 
     /**
      * User preferences record key to store recently viewed question banks.
      */
-    public const RECENTLY_VIEWED = 'recently_viewed_open_banks';
+    protected const RECENTLY_VIEWED = 'recently_viewed_open_banks';
 
     /**
      * Category delimiter used by the SQL to group concatenate question category data.
@@ -87,38 +70,46 @@ class question_bank_helper {
      * @return array
      */
     public static function get_activity_types_with_shareable_questions(): array {
-        if (!empty(self::$sharedmods)) {
-            return self::$sharedmods;
+        static $sharedmods;
+
+        if (!empty($sharedmods)) {
+            return $sharedmods;
         }
 
-        $plugins = \core_component::get_plugin_list('mod');
-        self::$sharedmods = array_filter(
+        $manager = \core_plugin_manager::instance();
+        $plugins = $manager->get_enabled_plugins('mod');
+
+        $sharedmods = array_filter(
             array_keys($plugins),
-            static fn($plugin) => plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
+            static fn ($plugin) => plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
                 question_module_uses_questions($plugin)
         );
 
-        return self::$sharedmods;
+        return $sharedmods;
     }
 
     /**
-     * Modules that are closed to sharing questions have FEATURE_USES_QUESTIONS flag only.
+     * Get module types that are do not share questions. They will have FEATURE_USES_QUESTIONS set to false or won't have it defined.
      *
      * @return array
      */
     public static function get_activity_types_with_private_questions(): array {
-        if (!empty(self::$privatemods)) {
-            return self::$privatemods;
+        static $privatemods;
+
+        if (!empty($privatemods)) {
+            return $privatemods;
         }
 
-        $plugins = \core_component::get_plugin_list('mod');
-        self::$privatemods = array_filter(
+        $manager = \core_plugin_manager::instance();
+        $plugins = $manager->get_enabled_plugins('mod');
+
+        $privatemods = array_filter(
             array_keys($plugins),
-            static fn($plugin) => !plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
+            static fn ($plugin) => !plugin_supports('mod', $plugin, FEATURE_PUBLISHES_QUESTIONS) &&
                 question_module_uses_questions($plugin)
         );
 
-        return self::$privatemods;
+        return $privatemods;
     }
 
     /**
@@ -139,7 +130,7 @@ class question_bank_helper {
         bool $getcategories = false,
         int $currentbankid = 0,
     ): array {
-        return self::get_bank_instances(self::SHARED,
+        return self::get_bank_instances(true,
             $incourseids,
             $notincourseids,
             $getcategories,
@@ -166,7 +157,7 @@ class question_bank_helper {
         bool $getcategories = false,
         int $currentbankid = 0,
     ): array {
-        return self::get_bank_instances(self::PRIVATE,
+        return self::get_bank_instances(false,
             $incourseids,
             $notincourseids,
             $getcategories,
@@ -180,16 +171,17 @@ class question_bank_helper {
      * {@see self::get_activity_instances_with_shareable_questions()}
      * {@see self::get_activity_instances_with_private_questions()}
      *
-     * @param string $type
-     * @param array $incourseids
-     * @param array $notincourseids
-     * @param bool $getcategories
-     * @param int $currentbankid
-     * @param array $havingcap
+     * @param bool $isshared true if you want instances that publish questions false if you want instances that don't
+     * @param array $incourseids array of course ids where you want instances included. Leave empty if you want them from all courses.
+     * @param array $notincourseids array of course ids where you do not want instances included.
+     * @param bool $getcategories optionally return the categories belonging to these banks.
+     * @param int $currentbankid optionally include the bank id you want included as the first result from the method return.
+     *  it will only be included if the other parameters allow it.
+     * @param array $havingcap current user must have these capabilities on each bank context.
      * @return stdClass[]
      */
     private static function get_bank_instances(
-        string $type,
+        bool $isshared,
         array $incourseids = [],
         array $notincourseids = [],
         bool $getcategories = false,
@@ -210,18 +202,22 @@ class question_bank_helper {
                 'qc.contextid'
             );
             $groupconcat = $DB->sql_group_concat($concat, ',');
-            $select = "SELECT cm.*, {$groupconcat} AS cats";
+            $select = "SELECT cm.id, cm.course, {$groupconcat} AS cats";
             $catsql = ' JOIN {context} c ON c.instanceid = cm.id AND c.contextlevel = ' . CONTEXT_MODULE .
                 ' JOIN {question_categories} qc ON qc.contextid = c.id AND qc.parent <> 0';
         } else {
-            $select = 'SELECT cm.*';
+            $select = 'SELECT cm.id, cm.course';
             $catsql = '';
         }
 
-        if ($type === self::SHARED) {
+        if ($isshared) {
             $plugins = self::get_activity_types_with_shareable_questions();
         } else {
             $plugins = self::get_activity_types_with_private_questions();
+        }
+
+        if (empty($plugins)) {
+            return [];
         }
 
         // Build the joins for all modules of the type requested i.e. those that do or do not share questions.
@@ -230,7 +226,7 @@ class question_bank_helper {
             $sql = "JOIN {{$plugin}} p{$key} ON p{$key}.id = cm.instance
                     AND cm.module = {$moduleid} AND cm.deletioninprogress = 0";
             if ($plugin === 'qbank') {
-                $sql .= " AND p{$key}.type <> '" . self::PREVIEW . "'";
+                $sql .= " AND p{$key}.type <> '" . self::TYPE_PREVIEW . "'";
             }
             $pluginssql[] = $sql;
         }
@@ -268,7 +264,7 @@ class question_bank_helper {
                 {$pluginssql}
                 {$catsql}
                 WHERE 1=1 {$notincoursesql} {$incoursesql}
-                GROUP BY cm.id
+                GROUP BY cm.id, cm.course
                 {$orderbysql}";
 
         $rs = $DB->get_recordset_sql($sql, $params);
@@ -294,7 +290,7 @@ class question_bank_helper {
      * Get a list of recently viewed question banks that implement FEATURE_PUBLISHES_QUESTIONS.
      * If any of the stored contexts don't exist anymore then update the user preference record accordingly.
      *
-     * @param int $userid
+     * @param int $userid of the user to get recently viewed banks for.
      * @param int $notincourseid if supplied don't return any in this course id
      * @return cm_info[]
      */
@@ -334,8 +330,8 @@ class question_bank_helper {
 
     /**
      * Mark a user as having viewed a question bank in the user_preferences table with key {@see self::RECENTLY_VIEWED}
-
-     * @param context $bankcontext
+     *
+     * @param context $bankcontext add this bank context to the viewing user's list of recently viewed.
      * @return void
      */
     public static function add_bank_context_to_recently_viewed(context $bankcontext): void {
@@ -360,9 +356,9 @@ class question_bank_helper {
     }
 
     /**
-     * Format the instance name and any categories it contains.
-     * @param stdClass $cm
-     * @param int $currentbankid
+     * Populate the raw record with data for use in rendering.
+     * @param stdClass $cm raw course_modules record to populate data from.
+     * @param int $currentbankid set an 'enabled' flag on the instance that matched this id. Used in qbank_bulkmove/bulk_move.mustache
      * @return stdClass
      */
     private static function get_formatted_bank(stdClass $cm, int $currentbankid = 0): stdClass {
@@ -392,10 +388,10 @@ class question_bank_helper {
 
     /**
      * Get the system type mod_qbank instance for this course, optionally create it if it does not yet exist.
-     * {@see self::SYSTEM}
+     * {@see self::TYPE_SYSTEM}
      *
-     * @param stdClass $course
-     * @param bool $createifnotexists
+     * @param stdClass $course the course to get the default system type bank for.
+     * @param bool $createifnotexists create a default bank if it does not exist.
      * @return cm_info|null
      */
     public static function get_default_open_instance_system_type(stdClass $course, bool $createifnotexists = false): ?cm_info {
@@ -404,7 +400,7 @@ class question_bank_helper {
         $qbanks = $modinfo->get_instances_of('qbank');
         $systembank = null;
 
-        if ($systembankids = self::get_mod_qbank_ids_of_type_in_course($course, self::SYSTEM)) {
+        if ($systembankids = self::get_mod_qbank_ids_of_type_in_course($course, self::TYPE_SYSTEM)) {
             // We should only ever have 1 of these.
             $systembankid = reset($systembankids);
             // Filter the course modinfo qbanks by the systembankid.
@@ -413,7 +409,7 @@ class question_bank_helper {
         }
 
         if (!$systembank && $createifnotexists) {
-            $systembank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::SYSTEM);
+            $systembank = self::create_default_open_instance($course, get_string('systembank', 'mod_qbank'), self::TYPE_SYSTEM);
         }
 
         return $systembank;
@@ -423,7 +419,7 @@ class question_bank_helper {
      * Get the bank that is used for preview purposes only, optionally create it if it does not yet exist.
      * {@see \qbank_columnsortorder\column_manager::get_questionbank()}
      *
-     * @param bool $createifnotexists
+     * @param bool $createifnotexists create a default bank if it does not exist.
      * @return cm_info|null
      */
     public static function get_preview_open_instance_type(bool $createifnotexists = false): ?cm_info {
@@ -433,7 +429,7 @@ class question_bank_helper {
         $qbanks = $modinfo->get_instances_of('qbank');
         $previewbank = null;
 
-        if ($previewbankids = self::get_mod_qbank_ids_of_type_in_course($site, self::PREVIEW)) {
+        if ($previewbankids = self::get_mod_qbank_ids_of_type_in_course($site, self::TYPE_PREVIEW)) {
             // We should only ever have 1 of these.
             $previewbankid = reset($previewbankids);
             // Filter the course modinfo qbanks by the previewbankid.
@@ -442,7 +438,7 @@ class question_bank_helper {
         }
 
         if (!$previewbank && $createifnotexists) {
-            $previewbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::PREVIEW);
+            $previewbank = self::create_default_open_instance(get_site(), get_string('previewbank', 'mod_qbank'), self::TYPE_PREVIEW);
         }
 
         return $previewbank;
@@ -487,7 +483,7 @@ class question_bank_helper {
      * @param string $type {@see self::TYPES}
      * @return cm_info
      */
-    public static function create_default_open_instance(stdClass $course, string $bankname, string $type = self::STANDARD): cm_info {
+    public static function create_default_open_instance(stdClass $course, string $bankname, string $type = self::TYPE_STANDARD): cm_info {
         global $DB;
 
         if (!in_array($type, self::SHARED_TYPES)) {
@@ -495,7 +491,7 @@ class question_bank_helper {
         }
 
         // Preview bank must be created at site course.
-        if ($type === self::PREVIEW) {
+        if ($type === self::TYPE_PREVIEW) {
             if ($qbank = self::get_preview_open_instance_type()) {
                 return $qbank;
             }
@@ -503,7 +499,7 @@ class question_bank_helper {
         }
 
         // We can only have one of these types per course.
-        if ($type === self::SYSTEM && $qbank = self::get_default_open_instance_system_type($course)) {
+        if ($type === self::TYPE_SYSTEM && $qbank = self::get_default_open_instance_system_type($course)) {
             return $qbank;
         }
 
@@ -511,7 +507,7 @@ class question_bank_helper {
         $context = context_course::instance($course->id);
 
         // STANDARD type needs capability checks.
-        if ($type === self::STANDARD) {
+        if ($type === self::TYPE_STANDARD) {
             require_capability('moodle/course:manageactivities', $context);
             if (!course_allowed_module($course, $module->name)) {
                 throw new \moodle_exception('moduledisable');
@@ -532,13 +528,13 @@ class question_bank_helper {
         $data->downloadcontent = DOWNLOAD_COURSE_CONTENT_ENABLED;
         $data->visibleoncoursepage = 0;
         $data->name = $bankname;
-        $data->type = in_array($type, self::SHARED_TYPES) ? $type : self::STANDARD;
-        $data->showdescription = $type === self::STANDARD ? 0 : 1;
+        $data->type = in_array($type, self::SHARED_TYPES) ? $type : self::TYPE_STANDARD;
+        $data->showdescription = $type === self::TYPE_STANDARD ? 0 : 1;
 
         $mod = add_moduleinfo($data, $course);
 
         // Have to set this manually as the system because this bank type is not intended to be created directly by a user.
-        if ($type === self::SYSTEM) {
+        if ($type === self::TYPE_SYSTEM) {
             $DB->set_field('qbank', 'intro', get_string('systembankdescription', 'mod_qbank'), ['id' => $mod->instance]);
             $DB->set_field('qbank', 'introformat', FORMAT_HTML, ['id' => $mod->instance]);
         }
@@ -549,7 +545,7 @@ class question_bank_helper {
     /**
      * Get the url that shows the banks list of a course.
      *
-     * @param int $courseid
+     * @param int $courseid of the course to get the url for.
      * @param bool $createdefault Pass true if you want the URL to create a default qbank instance when referred.
      * @return moodle_url
      */

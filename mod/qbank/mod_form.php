@@ -28,12 +28,7 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_qbank_mod_form extends moodleform_mod {
-
-    /**
-     * Instance settings definition.
-     *
-     * @return void
-     */
+    #[\Override]
     protected function definition(): void {
         global $CFG;
 
@@ -46,7 +41,7 @@ class mod_qbank_mod_form extends moodleform_mod {
         $mform->setType('visible', PARAM_INT);
 
         $mform->addElement('hidden', 'type');
-        $mform->setDefaults('type', \core_question\local\bank\question_bank_helper::STANDARD);
+        $mform->setDefaults('type', \core_question\local\bank\question_bank_helper::TYPE_STANDARD);
         $mform->setType('type', PARAM_TEXT);
 
         $mform->addElement('header', 'generalhdr', get_string('general'));
@@ -97,13 +92,7 @@ class mod_qbank_mod_form extends moodleform_mod {
         $mform->setType('buttonar', PARAM_RAW);
     }
 
-    /**
-     * Validate submitted settings.
-     *
-     * @param array $data
-     * @param array $files
-     * @return array
-     */
+    #[\Override]
     public function validation($data, $files): array {
         global $DB;
         $mform = $this->_form;

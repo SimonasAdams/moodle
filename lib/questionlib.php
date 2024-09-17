@@ -1549,9 +1549,8 @@ function question_extend_settings_navigation(navigation_node $navigationnode, $c
 
     $iscourse = $context->contextlevel === CONTEXT_COURSE;
 
-    if ($iscourse) {
-        $baseurl = \core_question\local\bank\question_bank_helper::get_url_for_qbank_list($context->instanceid);
-        $params = null;
+    if ($context->contextlevel == CONTEXT_COURSE) {
+        $params = ['courseid' => $context->instanceid];
     } else if ($context->contextlevel == CONTEXT_MODULE) {
         $params = ['cmid' => $context->instanceid];
     } else {

@@ -4803,7 +4803,7 @@ function remove_course_contents($courseid, $showfeedback = true, ?array $options
     $locations = core_component::get_plugin_list('mod');
     // Sort mod instances that publish questions to the end of the list, so that they will be removed last.
     // This is because they could have questions in use by other activities in this course.
-    uksort($locations, static function($a, $b) {
+    uksort($locations, static function ($a, $b) {
         return plugin_supports('mod', $a, FEATURE_PUBLISHES_QUESTIONS) <=> plugin_supports('mod', $b, FEATURE_PUBLISHES_QUESTIONS);
     });
     foreach ($locations as $modname => $moddir) {

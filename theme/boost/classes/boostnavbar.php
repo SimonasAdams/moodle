@@ -46,9 +46,6 @@ class boostnavbar implements \renderable {
         foreach ($this->page->navbar->get_items() as $item) {
             $this->items[] = $item;
         }
-        $hook = new \theme_boost\hook\before_navbar_prepare_nodes_for_boost($this->items, $this->page);
-        $hooked = \core\di::get(\core\hook\manager::class)->dispatch($hook);
-        $this->items = $hooked->items;
         $this->prepare_nodes_for_boost();
     }
 
@@ -117,7 +114,7 @@ class boostnavbar implements \renderable {
                 // Remove if it is a course category breadcrumb node.
                 $this->remove($item->key, \breadcrumb_navigation_node::TYPE_CATEGORY);
 
-                // Modules types not visible on the course main page cannot have a section breadcrumb.
+                // Module types not visible on the course main page cannot have a section breadcrumb.
                 if (!$this->page->cm->is_of_type_that_can_display() && $item->type === navigation_node::TYPE_SECTION) {
                     $this->remove($item->key, \breadcrumb_navigation_node::TYPE_SECTION);
                 }

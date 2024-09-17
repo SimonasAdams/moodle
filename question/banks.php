@@ -40,6 +40,10 @@ $coursecontext = context_course::instance($course->id);
 require_login($course, false);
 require_capability('moodle/course:manageactivities', \context_course::instance($course->id));
 
+if (empty(question_bank_helper::get_activity_types_with_shareable_questions())) {
+    throw new moodle_exception('disabledbanks', 'question');
+}
+
 $allcaps = array_merge(question_edit_contexts::$caps['editq'], question_edit_contexts::$caps['categories']);
 $sharedbanks = question_bank_helper::get_activity_instances_with_shareable_questions([$course->id], [], $allcaps);
 $privatebanks = question_bank_helper::get_activity_instances_with_private_questions([$course->id], [], $allcaps);
