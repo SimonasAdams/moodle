@@ -168,7 +168,7 @@ class qformat_xml_import_export_test extends advanced_testcase {
 
         $course = self::getDataGenerator()->create_course();
         $qformat = $this->create_qformat('deprecated_category.xml', $course);
-        $cat = question_get_default_category($qformat->contexts[0]->id);
+        $cat = question_get_default_category($qformat->contexts[0]->id, true);
         $qformat->setCategory($cat);
         $imported = $qformat->importprocess();
         $this->assertTrue($imported);

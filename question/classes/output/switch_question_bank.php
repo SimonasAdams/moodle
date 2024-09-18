@@ -37,13 +37,13 @@ class switch_question_bank implements \renderable, \templatable {
     /**
      * Instantiate the output class.
      *
-     * @param int $quizmodid quiz course module id.
+     * @param int $quizcmid quiz course module id.
      * @param int $courseid of the current course.
      * @param int $userid of the user viewing the page.
      */
     public function __construct(
-        /** @var int quiz module id */
-        private readonly int $quizmodid,
+        /** @var int quiz course module id */
+        private readonly int $quizcmid,
         /** @var int id of the current course */
         private readonly int $courseid,
         /** @var int id of the user viewing the page */
@@ -59,7 +59,7 @@ class switch_question_bank implements \renderable, \templatable {
      */
     public function export_for_template(renderer_base $output) {
 
-        [, $cm] = get_module_from_cmid($this->quizmodid);
+        [, $cm] = get_module_from_cmid($this->quizcmid);
         $cminfo = cm_info::create($cm);
 
         $allsharedbanks = question_bank_helper::get_activity_instances_with_shareable_questions(
@@ -74,11 +74,12 @@ class switch_question_bank implements \renderable, \templatable {
 
         return [
             'quizname' => $cminfo->get_formatted_name(),
-            'quizmodid' => $this->quizmodid,
+            'quizcmid' => $this->quizcmid,
             'hascoursesharedbanks' => !empty($coursesharedbanks),
             'coursesharedbanks' => $coursesharedbanks,
             'hasrecentlyviewedbanks' => !empty($recentlyviewedbanks),
             'recentlyviewedbanks' => $recentlyviewedbanks,
+            'hasallsharedbanks' => !empty($allsharedbanks),
             'allsharedbanks' => $allsharedbanks,
         ];
     }

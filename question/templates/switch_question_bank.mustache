@@ -20,7 +20,7 @@
     Example context (json):
 {
     "quizname": "Quiz 1",
-    "quizmodid": 1,
+    "quizcmid": 1,
     "hascoursesharedbanks": true,
     "coursesharedbanks": [
         {
@@ -59,6 +59,7 @@
             "questioncategories": []
         }
     ],
+    "hasallsharedbanks": true,
     "allsharedbanks": [
         {
             "name": "Question bank 1",
@@ -97,7 +98,7 @@
 }}
 <div class="quiz-bank">
     <h5>{{#str}}quizquestionbank, core_question{{/str}}</h5>
-    <a href="#" class="ml-3" data-newmodid="{{quizmodid}}">{{quizname}}</a>
+    <a href="#" class="ms-3" data-newmodid="{{quizcmid}}">{{quizname}}</a>
 </div>
 
 <hr class="w-75">
@@ -106,7 +107,7 @@
     <div class="course-shared-banks">
         <h5>{{#str}}banksincourse, core_question{{/str}}</h5>
         {{#coursesharedbanks}}
-            <ul class="list-unstyled ml-3">
+            <ul class="list-unstyled ms-3">
                 <li>
                     <a href="#" data-newmodid="{{modid}}">{{name}}</a>
                 </li>
@@ -120,7 +121,7 @@
     <div class="recently-viewed-banks">
         <h5>{{#str}}recentlyviewedquestionbanks, core_question{{/str}}</h5>
         {{#recentlyviewedbanks}}
-            <ul class="list-unstyled ml-3">
+            <ul class="list-unstyled ms-3">
                 <li>
                     <a href="#" data-newmodid="{{modid}}">{{coursenamebankname}}</a>
                 </li>
@@ -130,12 +131,14 @@
     <hr class="w-75">
 {{/hasrecentlyviewedbanks}}
 
-<div class="search-banks">
-    <h5>{{#str}}otherquestionbank, core_question{{/str}}</h5>
-    <select class="custom-select" id="searchbanks">
-        <option value=""></option>
-        {{#allsharedbanks}}
-            <option value="{{modid}}">{{{coursenamebankname}}}</option>
-        {{/allsharedbanks}}
-    </select>
-</div>
+{{#hasallsharedbanks}}
+    <div class="search-banks">
+        <h5>{{#str}}otherquestionbank, core_question{{/str}}</h5>
+        <select class="custom-select" id="searchbanks">
+            <option value=""></option>
+            {{#allsharedbanks}}
+                <option value="{{modid}}">{{{coursenamebankname}}}</option>
+            {{/allsharedbanks}}
+        </select>
+    </div>
+{{/hasallsharedbanks}}

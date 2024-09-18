@@ -793,7 +793,7 @@ function plagiarism_update_status(): void {
  * @param array $contexts The context objects.
  * @return stdClass|null The default category - the category in the first module context supplied in $contexts
 */
-#[\core\attribute\deprecated('This method should not be used', since: '4.5', mdl: 'MDL-71378')]
+#[\core\attribute\deprecated('This method should not be used', since: '4.6', mdl: 'MDL-71378')]
 function question_make_default_categories($contexts): object {
     global $DB;
     static $preferredlevels = array(
@@ -823,7 +823,7 @@ function question_make_default_categories($contexts): object {
             $category->stamp = make_unique_id_code();
             $category->id = $DB->insert_record('question_categories', $category);
         } else {
-            $category = question_get_default_category($context->id);
+            $category = question_get_default_category($context->id, true);
         }
         $thispreferredness = $preferredlevels[$context->contextlevel];
         if (has_any_capability(array('moodle/question:usemine', 'moodle/question:useall'), $context)) {
@@ -848,7 +848,7 @@ function question_make_default_categories($contexts): object {
  * @param bool $notused this argument is not used any more. Kept for backwards compatibility.
  * @return bool always true.
  */
-#[\core\attribute\deprecated('This method should not be used', since: '4.5', mdl: 'MDL-71378')]
+#[\core\attribute\deprecated('This method should not be used', since: '4.6', mdl: 'MDL-71378')]
 function question_delete_course($course, $notused = false): bool {
     \core\deprecation::emit_deprecation_if_present(__FUNCTION__);
 
@@ -868,7 +868,7 @@ function question_delete_course($course, $notused = false): bool {
  * @param bool $notused this argument is no longer used. Kept for backwards compatibility.
  * @return boolean
  */
-#[\core\attribute\deprecated('This method should not be used', since: '4.5', mdl: 'MDL-71378')]
+#[\core\attribute\deprecated('This method should not be used', since: '4.6', mdl: 'MDL-71378')]
 function question_delete_course_category($category, $newcategory, $notused = false): bool {
     global $DB;
     \core\deprecation::emit_deprecation_if_present(__FUNCTION__);

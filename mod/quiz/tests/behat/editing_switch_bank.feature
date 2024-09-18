@@ -44,9 +44,9 @@ Feature: Switching question bank when adding questions to a quiz
   Scenario: Switching to another bank shows the expected banks
     Given I open the "last" add to quiz menu
     And I follow "from question bank"
-    Then I should see "Current bank: Quiz 1"
-    Then I click on "Switch bank" "button"
-    And I should see "Quiz 1"
+    And I should see "Current bank: Quiz 1"
+    When I click on "Switch bank" "button"
+    Then I should see "Quiz 1"
     And I should see "Qbank 1"
     And I should see "Qbank 2"
     But I should not see "Qbank 3"
@@ -54,22 +54,22 @@ Feature: Switching question bank when adding questions to a quiz
   Scenario: Searching for another shared bank shows the expected bank
     Given I open the "last" add to quiz menu
     And I follow "from question bank"
-    Then I should see "Current bank: Quiz 1"
-    Then I click on "Switch bank" "button"
+    And I should see "Current bank: Quiz 1"
+    When I click on "Switch bank" "button"
     And I open the autocomplete suggestions list
-    And "Qbank 3" "autocomplete_suggestions" should exist
+    Then "Qbank 3" "autocomplete_suggestions" should exist
     But "Qbank 4" "autocomplete_suggestions" should not exist
     And I click on "C2 - Qbank 3" item in the autocomplete list
-    Then I should see "Current bank: Qbank 3"
+    And I should see "Current bank: Qbank 3"
     And I should see "Test questions 3"
 
   Scenario: Viewing question banks not in the current course show as recently accessed
     Given I am on the "qbank1" "Activity" page
-    Then I am on the "qbank2" "Activity" page
-    Then I am on the "qbank3" "Activity" page
-    Then I am on the "Quiz 1" "mod_quiz > Edit" page
-    And I open the "last" add to quiz menu
+    And I am on the "qbank2" "Activity" page
+    And I am on the "qbank3" "Activity" page
+    And I am on the "Quiz 1" "mod_quiz > Edit" page
+    When I open the "last" add to quiz menu
     And I follow "from question bank"
-    Then I click on "Switch bank" "button"
-    And I should see "Qbank 3"
+    And I click on "Switch bank" "button"
+    Then I should see "Qbank 3"
     But I should not see "Qbank 4"

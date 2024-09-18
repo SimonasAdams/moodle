@@ -177,7 +177,7 @@ class column_manager extends column_manager_base {
         $cm = $previewbank->get_course_module_record();
         $context = \context_module::instance($previewbank->id);
         $contexts = new question_edit_contexts($context);
-        $category = question_get_default_category($contexts->lowest()->id);
+        $category = question_get_default_category($contexts->lowest()->id, true);
         $params = ['cat' => $category->id . ',' . $context->id];
         // Dummy call to get the objects without error.
         $questionbank = new preview_view(

@@ -62,18 +62,18 @@ export default class ModalAddRandomQuestion extends Modal {
      * Create the add random question modal.
      *
      * @param  {Number} contextId Current context id.
-     * @param  {Number} bankModId Current question bank course module id.
+     * @param  {Number} bankCmId Current question bank course module id.
      * @param  {string} category Category id and category context id comma separated.
      * @param  {string} returnUrl URL to return to after form submission.
-     * @param  {Number} quizModId Current quiz course module id.
+     * @param  {Number} quizCmId Current quiz course module id.
      * @param  {boolean} showNewCategory Display the New category tab when selecting random questions.
      */
     static init(
         contextId,
-        bankModId,
+        bankCmId,
         category,
         returnUrl,
-        quizModId,
+        quizCmId,
         showNewCategory = true
     ) {
         const selector = '.menu [data-action="addarandomquestion"]';
@@ -86,10 +86,10 @@ export default class ModalAddRandomQuestion extends Modal {
 
             ModalAddRandomQuestion.create({
                 contextId,
-                bankModId,
+                bankCmId,
                 category,
                 returnUrl,
-                quizModId,
+                quizCmId,
                 showNewCategory,
                 title: trigger.dataset.header,
                 addOnPage: trigger.dataset.addonpage,
@@ -110,7 +110,7 @@ export default class ModalAddRandomQuestion extends Modal {
         super(root);
         this.category = null;
         this.returnUrl = null;
-        this.quizModId = null;
+        this.quizCmId = null;
         this.loadedForm = false;
     }
 
@@ -237,8 +237,8 @@ export default class ModalAddRandomQuestion extends Modal {
     loadForm() {
         const addonpage = this.getAddOnPageId();
         const returnurl = this.getReturnUrl();
-        const quizmodid = this.quizModId;
-        const bankmodid = this.bankModId;
+        const quizcmid = this.quizCmId;
+        const bankcmid = this.bankCmId;
 
         return Fragment.loadFragment(
             'mod_quiz',
@@ -247,8 +247,8 @@ export default class ModalAddRandomQuestion extends Modal {
             {
                 addonpage,
                 returnurl,
-                quizmodid,
-                bankmodid,
+                quizcmid,
+                bankcmid,
             }
         )
         .then((html, js) =>{
@@ -280,7 +280,7 @@ export default class ModalAddRandomQuestion extends Modal {
                 e.preventDefault();
 
                 // Intercept the submission to adjust the POST params so that the quiz mod id is set and not the bank module id.
-                document.querySelector('#questionscontainer input[name="cmid"]').setAttribute('name', this.quizModId);
+                document.querySelector('#questionscontainer input[name="cmid"]').setAttribute('name', this.quizCmId);
 
                 // Add Random questions if the add random button was clicked.
                 const addRandomButton = e.target.closest(SELECTORS.ADD_RANDOM_BUTTON);
@@ -288,14 +288,14 @@ export default class ModalAddRandomQuestion extends Modal {
                     const randomcount = document.querySelector(SELECTORS.SELECT_NUMBER_TO_ADD).value;
                     const filtercondition = document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
 
-                    this.addQuestions(quizmodid, addonpage, randomcount, filtercondition, '', '');
+                    this.addQuestions(quizcmid, addonpage, randomcount, filtercondition, '', '');
                     return;
                 }
                 // Add new category if the add category button was clicked.
                 const addCategoryButton = e.target.closest(SELECTORS.ADD_NEW_CATEGORY_BUTTON);
                 if (addCategoryButton) {
                     this.addQuestions(
-                        quizmodid,
+                        quizcmid,
                         addonpage,
                         1,
                         '',
@@ -308,16 +308,16 @@ export default class ModalAddRandomQuestion extends Modal {
 
             this.getModal().on('click', SELECTORS.SWITCH_TO_OTHER_BANK, () => {
                 this.handleSwitchBankContentReload(SELECTORS.BANK_SEARCH).then(function (ModalQuizQuestionBank) {
-                    $(SELECTORS.BANK_SEARCH).on('change', (e) => {
-                        const bankModId = $(e.currentTarget).val();
+                    $(SELECTORS.BANK_SEARCH)?.on('change', (e) => {
+                        const bankCmId = $(e.currentTarget).val();
                         // Have to recreate the modal as we have already used the body for the switch bank content.
-                        if (bankModId > 0) {
+                        if (bankCmId > 0) {
                             ModalAddRandomQuestion.create({
                                 'contextId': ModalQuizQuestionBank.getContextId(),
-                                'bankModId': bankModId,
+                                'bankCmId': bankCmId,
                                 'category': ModalQuizQuestionBank.getCategory(),
                                 'returnUrl': ModalQuizQuestionBank.getReturnUrl(),
-                                'quizModId': ModalQuizQuestionBank.quizModId,
+                                'quizCmId': ModalQuizQuestionBank.quizCmId,
                                 'title': ModalQuizQuestionBank.originalTitle,
                                 'addOnPage': ModalQuizQuestionBank.getAddOnPageId(),
                                 'templateContext': {hidden: ModalQuizQuestionBank.showNewCategory},
@@ -333,10 +333,10 @@ export default class ModalAddRandomQuestion extends Modal {
                 // Have to recreate the modal as we have already used the body for the switch bank content.
                 ModalAddRandomQuestion.create({
                     'contextId': this.getContextId(),
-                    'bankModId': anchorElement.attr('value'),
+                    'bankCmId': anchorElement.attr('value'),
                     'category': this.getCategory(),
                     'returnUrl': this.getReturnUrl(),
-                    'quizModId': this.quizModId,
+                    'quizCmId': this.quizCmId,
                     'title': this.originalTitle,
                     'addOnPage': this.getAddOnPageId(),
                     'templateContext': {hidden: this.showNewCategory},
@@ -350,10 +350,10 @@ export default class ModalAddRandomQuestion extends Modal {
                 if (anchorElement.closest('a[' + SELECTORS.NEW_BANKMOD_ID + ']').length) {
                     ModalAddRandomQuestion.create({
                         'contextId': this.getContextId(),
-                        'bankModId': anchorElement.attr(SELECTORS.NEW_BANKMOD_ID),
+                        'bankCmId': anchorElement.attr(SELECTORS.NEW_BANKMOD_ID),
                         'category': this.getCategory(),
                         'returnUrl': this.getReturnUrl(),
-                        'quizModId': this.quizModId,
+                        'quizCmId': this.quizCmId,
                         'title': this.originalTitle,
                         'addOnPage': this.getAddOnPageId(),
                         'templateContext': {hidden: this.showNewCategory},
@@ -368,7 +368,7 @@ export default class ModalAddRandomQuestion extends Modal {
     /**
      * Call web service function to add random questions
      *
-     * @param {number} quizmodid the course module id of the quiz to add questions to.
+     * @param {number} quizcmid the course module id of the quiz to add questions to.
      * @param {number} addonpage the page where random questions will be added to
      * @param {number} randomcount Number of random questions
      * @param {string} filtercondition Filter condition
@@ -376,7 +376,7 @@ export default class ModalAddRandomQuestion extends Modal {
      * @param {string} parentcategory parent category of new category
      */
     async addQuestions(
-        quizmodid,
+        quizcmid,
         addonpage,
         randomcount,
         filtercondition,
@@ -388,7 +388,7 @@ export default class ModalAddRandomQuestion extends Modal {
         const call = {
             methodname: 'mod_quiz_add_random_questions',
             args: {
-                cmid: quizmodid,
+                cmid: quizcmid,
                 addonpage,
                 randomcount,
                 filtercondition,
