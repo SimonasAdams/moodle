@@ -78,7 +78,7 @@ class qbank_preview_helper_test extends \advanced_testcase {
         $this->context = context_course::instance($course->id);
         // Create a question in the default category.
         $contexts = new \core_question\local\bank\question_edit_contexts($qbankcontext);
-        $cat = question_get_default_category($contexts->lowest()->id);
+        $cat = question_get_default_category($contexts->lowest()->id, true);
         $this->questiondata = $questiongenerator->create_question('numerical', null,
                 ['name' => 'Example question', 'category' => $cat->id]);
         $this->quba = question_engine::make_questions_usage_by_activity('core_question_preview',

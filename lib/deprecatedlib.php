@@ -787,33 +787,6 @@ function plagiarism_update_status(): void {
 }
 
 /**
- * Method used to check the usage of slasharguments config and display a warning message.
- *
- * @param environment_results $result object to update, if relevant.
- * @return environment_results|null updated results or null if slasharguments is disabled.
- *
- * @deprecated Since Moodle 4.5
- * @todo Final deprecation on Moodle 6.0. See MDL-82768.
- */
-#[\core\attribute\deprecated(
-    since: '4.5',
-    mdl: 'MDL-62640',
-    reason: 'Removed the option to disable slash arguments (slashargs)',
-)]
-function check_slasharguments(environment_results $result) {
-    \core\deprecation::emit_deprecation_if_present(__FUNCTION__);
-    global $CFG;
-
-    if (!during_initial_install() && empty($CFG->slasharguments)) {
-        $result->setInfo('slasharguments');
-        $result->setStatus(false);
-        return $result;
-    }
-
-    return null;
-}
-
-/**
  * Gets the default category for a module context.
  * If no categories exist yet then default ones are created in all contexts.
  *
@@ -850,7 +823,7 @@ function question_make_default_categories($contexts): object {
             $category->stamp = make_unique_id_code();
             $category->id = $DB->insert_record('question_categories', $category);
         } else {
-            $category = question_get_default_category($context->id);
+            $category = question_get_default_category($context->id, true);
         }
         $thispreferredness = $preferredlevels[$context->contextlevel];
         if (has_any_capability(array('moodle/question:usemine', 'moodle/question:useall'), $context)) {

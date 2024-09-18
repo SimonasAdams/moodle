@@ -91,7 +91,7 @@ class helper_test extends \advanced_testcase {
 
         // Create a question in the default category.
         $this->contexts = new question_edit_contexts($this->context);
-        $this->cat = question_get_default_category($this->contexts->lowest()->id);
+        $this->cat = question_get_default_category($this->contexts->lowest()->id, true);
         $this->questiondata1 = $questiongenerator->create_question('numerical', null,
             ['name' => 'Example question', 'category' => $this->cat->id]);
 

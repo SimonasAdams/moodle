@@ -45,7 +45,7 @@ class restore_test extends \restore_date_testcase {
         $course = $generator->create_course();
         $qbank = $generator->create_module('qbank', ['course' => $course->id]);
         $context = \context_module::instance($qbank->cmid);
-        $category = question_get_default_category($context->id);
+        $category = question_get_default_category($context->id, true);
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $essay = $questiongenerator->create_question('essay', null, array('category' => $category->id));
 

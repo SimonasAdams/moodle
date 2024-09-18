@@ -1072,7 +1072,7 @@ class edit_renderer extends \plugin_renderer_base {
         $bankcontext = \context::instance_by_id($question->contextid);
         $slot = $structure->get_slot_by_number($slotnumber);
         $editurl = new \moodle_url('/mod/quiz/editrandom.php',
-                ['returnurl' => $pageurl->out_as_local_url(), 'slotid' => $slot->id, 'bankmodid' => $bankcontext->instanceid]);
+                ['returnurl' => $pageurl->out_as_local_url(), 'slotid' => $slot->id, 'bankcmid' => $bankcontext->instanceid]);
 
         $temp = clone($question);
         $temp->questiontext = '';
@@ -1086,7 +1086,7 @@ class edit_renderer extends \plugin_renderer_base {
 
         $editicon = $this->pix_icon('t/edit', $configuretitle, 'moodle', ['title' => '']);
         $qbankurlparams = [
-            'cmid' => $bankcontext->instanceid,
+            'cmid' => $structure->get_cmid(),
             'cat' => $slot->category . ',' . $slot->contextid,
         ];
 

@@ -90,7 +90,7 @@ class custom_view extends \core_question\local\bank\view {
 
         $this->init_columns($this->wanted_columns(), $this->heading_column());
         parent::__construct($contexts, $pageurl, $course, $cm, $params, $extraparams);
-        [$this->quiz, ] = get_module_from_cmid($extraparams['quizmodid'] ?? $cm->id);
+        [$this->quiz, ] = get_module_from_cmid($extraparams['quizcmid']);
         $this->set_quiz_has_attempts(quiz_has_attempts($this->quiz->id));
         $this->pagesize = self::DEFAULT_PAGE_SIZE;
         $this->requirebankswitch = $extraparams['requirebankswitch'] ?? true;
@@ -338,7 +338,7 @@ class custom_view extends \core_question\local\bank\view {
      *
      * @return string
      */
-    public function display_bank_switch(): string {
+    protected function display_bank_switch(): string {
         global $OUTPUT;
 
         if (!$this->requirebankswitch) {

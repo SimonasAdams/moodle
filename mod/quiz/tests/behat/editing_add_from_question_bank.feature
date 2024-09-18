@@ -52,19 +52,19 @@ Feature: Adding questions to a quiz from the question bank
     Given I am on the "question 03 name" "core_question > edit" page logged in as teacher1
     And I set the following fields to these values:
       | Tags | qbanktag1 |
-    And I press "id_submitbutton"
-    Then I am on the "question 04 name" "core_question > edit" page logged in as teacher1
+    And I press "Save changes"
+    And I am on the "question 04 name" "core_question > edit" page logged in as teacher1
     And I set the following fields to these values:
       | Tags | qbanktag2 |
-    And I press "id_submitbutton"
+    And I press "Save changes"
     When I am on the "Quiz 1" "mod_quiz > Edit" page
     And I open the "last" add to quiz menu
     And I follow "from question bank"
-    Then I click on "Switch bank" "button"
-    And I click on "Qbank 1" "link"
+    And I click on "Switch bank" "button"
+    And I click on "Qbank 1" "link" in the "Select question bank" "dialogue"
     Then I should see "qbanktag1" in the "question 03 name" "table_row"
     And I should see "qbanktag2" in the "question 04 name" "table_row"
-    When I apply question bank filter "Tag" with value "qbanktag1"
+    And I apply question bank filter "Tag" with value "qbanktag1"
     And I should see "question 03 name" in the "categoryquestions" "table"
     And I should not see "question 04 name" in the "categoryquestions" "table"
 
@@ -161,13 +161,12 @@ Feature: Adding questions to a quiz from the question bank
     And I follow "from question bank"
     Then I should see "Current bank: Quiz 1"
     And I should see "question 01 name"
-    Then I click on "Switch bank" "button"
-    And I click on "Qbank 1" "link"
-    Then I should see "Current bank: Qbank 1"
+    And I click on "Switch bank" "button"
+    And I click on "Qbank 1" "link" in the "Select question bank" "dialogue"
     And I should see "question 03 name"
     But I should not see "question 01 name"
     And I click on "Select" "checkbox" in the "question 03 name" "table_row"
-    Then I click on "Add selected questions to the quiz" "button"
+    And I click on "Add selected questions to the quiz" "button"
     And I should see "question 03 name"
 
   @javascript

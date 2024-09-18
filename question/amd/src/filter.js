@@ -35,7 +35,7 @@ import Fragment from 'core/fragment';
  * @param {String} defaultcategoryid Question bank category ID for the default course to pass back to the view.
  * @param {Number} perpage The number of questions to display per page.
  * @param {Number} bankContextId Context ID of the question bank being filtered.
- * @param {Number} quizModId Course module ID of the quiz as the viewing context.
+ * @param {Number} quizCmId Course module ID of the quiz as the viewing context.
  * @param {string} component Frankenstyle name of the component for the fragment API callback (e.g. core_question)
  * @param {string} callback Name of the callback for the fragment API (e.g question_data)
  * @param {string} view The class name of the question bank view class used for this page.
@@ -49,7 +49,7 @@ export const init = (
     defaultcategoryid,
     perpage,
     bankContextId,
-    quizModId,
+    quizCmId,
     component,
     callback,
     view,
@@ -117,7 +117,7 @@ export const init = (
         // Load questions for first page.
         viewData.filter = JSON.stringify(filterdata);
         viewData.sortdata = JSON.stringify(sortData);
-        viewData.quizmodid = quizModId;
+        viewData.quizcmid = quizCmId;
         Fragment.loadFragment(component, callback, bankContextId, viewData)
             // Render questions for first page and pagination.
             .then((questionhtml, jsfooter) => {

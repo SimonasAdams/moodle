@@ -8,7 +8,7 @@ Feature: Backup and restore of quizzes
     Given the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1        | 0        |
-    Given the following "activities" exist:
+    And the following "activities" exist:
       | activity   | name   | intro              | course | idnumber |
       | quiz       | Quiz 1 | For testing backup | C1     | quiz1    |
     And the following "question categories" exist:

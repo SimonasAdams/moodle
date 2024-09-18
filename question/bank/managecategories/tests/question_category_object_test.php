@@ -111,7 +111,7 @@ class question_category_object_test extends \advanced_testcase {
                 'See MDL-72397 for more information.',
         );
 
-        $this->defaultcategoryobj = question_get_default_category($this->qcontexts->lowest()->id);
+        $this->defaultcategoryobj = question_get_default_category($this->qcontexts->lowest()->id, true);
         $this->defaultcategory = $this->defaultcategoryobj->id . ',' . $this->defaultcategoryobj->contextid;
 
         $this->resetDebugging();

@@ -307,7 +307,7 @@ function question_build_edit_resources($edittab, $baseurl, $params,
         $pagevars['qperpage'] = $qperpage ?? $defaultquestionsperpage;
     }
 
-    $defaultcategory = question_get_default_category($contexts->lowest()->id);
+    $defaultcategory = question_get_default_category($contexts->lowest()->id, true);
 
     $contextlistarr = [];
     foreach ($contexts->having_one_edit_tab_cap($edittab) as $context){

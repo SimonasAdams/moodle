@@ -2336,13 +2336,13 @@ function mod_quiz_output_fragment_quiz_question_bank($args): string {
     }
 
     // Load the bank we are looking at rather than always the quiz module itself.
-    $params['cmid'] = clean_param($args['bankmodid'], PARAM_INT);
+    $params['cmid'] = clean_param($args['bankcmid'], PARAM_INT);
 
     $viewclass = \mod_quiz\question\bank\custom_view::class;
     $extraparams['view'] = $viewclass;
 
     // We need the quiz modid to POST back to.
-    $extraparams['quizmodid'] = clean_param($args['quizmodid'], PARAM_INT);
+    $extraparams['quizcmid'] = clean_param($args['quizcmid'], PARAM_INT);
 
     // Build required parameters.
     [$contexts, $thispageurl, $cm, $pagevars, $extraparams] =
@@ -2382,8 +2382,8 @@ function mod_quiz_output_fragment_switch_question_bank($args): string {
  * The required arguments as keys in the $args array are:
  *      addonpage {int} The page id to add this question to.
  *      returnurl {string} URL to return to after form submission.
- *      quizmodid {int} The quiz course module id the questions are being added to.
- *      bankmodid {int} The question bank course module id the questions are being added from.
+ *      quizcmid {int} The quiz course module id the questions are being added to.
+ *      bankcmid {int} The question bank course module id the questions are being added from.
  *
  * @param array $args The fragment arguments.
  * @return string The rendered mform fragment.
@@ -2392,8 +2392,8 @@ function mod_quiz_output_fragment_add_random_question_form($args) {
     global $PAGE, $OUTPUT;
 
     $extraparams = [];
-    $extraparams['quizmodid'] = clean_param($args['quizmodid'], PARAM_INT);
-    $extraparams['cmid'] = clean_param($args['bankmodid'], PARAM_INT);
+    $extraparams['quizcmid'] = clean_param($args['quizcmid'], PARAM_INT);
+    $extraparams['cmid'] = clean_param($args['bankcmid'], PARAM_INT);
 
     // Build required parameters.
     [$contexts, $thispageurl, $cm, $pagevars, $extraparams] =
@@ -2508,14 +2508,14 @@ function mod_quiz_output_fragment_question_data(array $args): string {
     $thispageurl = new \moodle_url('/mod/quiz/edit.php', ['cmid' => $cmid]);
     $thiscontext = \context_module::instance($cmid);
     $contexts = new \core_question\local\bank\question_edit_contexts($thiscontext);
-    $defaultcategory = question_get_default_category($contexts->lowest()->id);
+    $defaultcategory = question_get_default_category($contexts->lowest()->id, true);
     $params['cat'] = implode(',', [$defaultcategory->id, $defaultcategory->contextid]);
 
     $course = get_course($params['courseid']);
     // The viewing bank mod id.
     [, $cm] = get_module_from_cmid(clean_param($args['cmid'], PARAM_INT));
     $params['tabname'] = 'questions';
-    $extraparams['quizmodid'] = clean_param($args['quizmodid'], PARAM_INT);
+    $extraparams['quizcmid'] = clean_param($args['quizcmid'], PARAM_INT);
 
     // Custom question bank View.
     $viewclass = clean_param($args['view'], PARAM_NOTAGS);
@@ -2548,6 +2548,8 @@ function build_required_parameters_for_custom_view(array $params, array $extrapa
 
     // Add cmid so we can retrieve later in extra params.
     $extraparams['cmid'] = $cmid;
+
+    $extraparams['requirebankswitch'] = !empty(question_bank_helper::get_activity_types_with_shareable_questions());
 
     return [$contexts, $thispageurl, $cm, $pagevars, $extraparams];
 }

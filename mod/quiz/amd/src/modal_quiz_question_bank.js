@@ -47,10 +47,10 @@ export default class ModalQuizQuestionBank extends Modal {
      * Create the question bank modal.
      *
      * @param {Number} contextId Current module context id.
-     * @param {Number} bankModId Current question bank course module id.
-     * @param {Number} quizModId Current quiz course module id.
+     * @param {Number} bankCmId Current question bank course module id.
+     * @param {Number} quizCmId Current quiz course module id.
      */
-    static init(contextId, bankModId, quizModId) {
+    static init(contextId, bankCmId, quizCmId) {
         const selector = '.menu [data-action="questionbank"]';
         document.addEventListener('click', (e) => {
             const trigger = e.target.closest(selector);
@@ -61,8 +61,8 @@ export default class ModalQuizQuestionBank extends Modal {
 
             ModalQuizQuestionBank.create({
                 contextId,
-                quizModId,
-                bankModId,
+                quizCmId,
+                bankCmId,
                 title: trigger.dataset.header,
                 addOnPage: trigger.dataset.addonpage,
                 templateContext: {
@@ -108,8 +108,8 @@ export default class ModalQuizQuestionBank extends Modal {
             this.getContextId(),
             {
                 querystring,
-                quizmodid: this.quizModId,
-                bankmodid: this.bankModId,
+                quizcmid: this.quizCmId,
+                bankcmid: this.bankCmId,
             }
         ));
     }
@@ -129,7 +129,7 @@ export default class ModalQuizQuestionBank extends Modal {
         // redirected.
         const href = new URL(anchorElement.getAttribute('href'));
         href.searchParams.set('addonpage', this.getAddOnPageId());
-        href.searchParams.set('cmid', this.quizModId);
+        href.searchParams.set('cmid', this.quizCmId);
         anchorElement.setAttribute('href', href);
     }
 
@@ -150,23 +150,23 @@ export default class ModalQuizQuestionBank extends Modal {
             document.querySelector(SELECTORS.ADD_ON_PAGE_FORM_ELEMENT).setAttribute('value', this.getAddOnPageId());
 
             // We also need to set the form cmid & action as the quiz modid as this could be coming from a module that isn't a quiz.
-            document.querySelector(SELECTORS.CMID_FORM_ELEMENT).setAttribute('value', this.quizModId);
+            document.querySelector(SELECTORS.CMID_FORM_ELEMENT).setAttribute('value', this.quizCmId);
             const actionUrl = new URL(formElement.getAttribute('action'));
-            actionUrl.searchParams.set('cmid', this.quizModId);
+            actionUrl.searchParams.set('cmid', this.quizCmId);
             formElement.setAttribute('action', actionUrl.toString());
         });
 
         this.getModal().on('click', SELECTORS.SWITCH_TO_OTHER_BANK, () => {
             this.handleSwitchBankContentReload(SELECTORS.BANK_SEARCH).then(function (ModalQuizQuestionBank) {
-                    document.querySelector(SELECTORS.BANK_SEARCH).addEventListener('change', (e) => {
-                        const bankModId = e.currentTarget.value;
-                        if (bankModId > 0) {
-                            ModalQuizQuestionBank.bankModId = bankModId;
+                    document.querySelector(SELECTORS.BANK_SEARCH)?.addEventListener('change', (e) => {
+                        const bankCmId = e.currentTarget.value;
+                        if (bankCmId > 0) {
+                            ModalQuizQuestionBank.bankCmId = bankCmId;
                             ModalQuizQuestionBank.reloadBodyContent(window.location.search);
                         }
                     });
                     document.querySelector(SELECTORS.GO_BACK_BUTTON).addEventListener('click', (e) => {
-                        ModalQuizQuestionBank.bankModId = e.currentTarget.value;
+                        ModalQuizQuestionBank.bankCmId = e.currentTarget.value;
                         ModalQuizQuestionBank.reloadBodyContent(window.location.search);
                     });
                 }
@@ -193,7 +193,12 @@ export default class ModalQuizQuestionBank extends Modal {
             }
 
             if (anchorElement.closest('a[' + SELECTORS.NEW_BANKMOD_ID + ']')) {
-                this.bankModId = anchorElement.getAttribute(SELECTORS.NEW_BANKMOD_ID);
+                this.bankCmId = anchorElement.getAttribute(SELECTORS.NEW_BANKMOD_ID);
+
+                // We need to clear the filter as we are about to reload the content.
+                const url = new URL(location.href);
+                url.searchParams.delete('filter');
+                history.pushState({}, '', url);
             }
 
             // Anything else means reload the pop-up contents.

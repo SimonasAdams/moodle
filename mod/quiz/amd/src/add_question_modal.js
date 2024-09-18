@@ -41,8 +41,8 @@ export default class AddQuestionModal extends Modal {
 
         // Store the quiz module id for when we need to POST to the quiz.
         // This is because the URL cmid param will change during filter operations as we will be in another bank context.
-        this.quizModId = modalConfig.quizModId;
-        this.bankModId = modalConfig.bankModId;
+        this.quizCmId = modalConfig.quizCmId;
+        this.bankCmId = modalConfig.bankCmId;
 
         // Store the original title of the modal, so we can revert back to it once we have switched to another bank.
         this.originalTitle = modalConfig.title;
@@ -101,62 +101,6 @@ export default class AddQuestionModal extends Modal {
     }
 
     /**
-     * @param {Number} quizModId
-     */
-    setQuizModId(quizModId) {
-        this.quizModId = quizModId;
-    }
-
-    /**
-     * @returns {Number}
-     */
-    getQuizModId() {
-        return this.quizModId;
-    }
-
-    /**
-     * @param {array} courseOpenBanks
-     */
-    setCourseOpenBanks(courseOpenBanks) {
-        this.courseOpenBanks = courseOpenBanks;
-    }
-
-    /**
-     * @return {array} allOpenBanks
-     */
-    getCourseOpenBanks() {
-        return this.courseOpenBanks;
-    }
-
-    /**
-     * @param {array} allOpenBanks
-     */
-    setAllOpenBanks(allOpenBanks) {
-        this.allOpenBanks = allOpenBanks;
-    }
-
-    /**
-     * @return {array} allOpenBanks
-     */
-    getAllOpenBanks() {
-        return this.allOpenBanks;
-    }
-
-    /**
-     * @param {array} recentlyViewedBanks
-     */
-    setRecentlyViewedBanks(recentlyViewedBanks) {
-        this.recentlyViewedBanks = recentlyViewedBanks;
-    }
-
-    /**
-     * @return {Array} recentlyViewedBanks
-     */
-    getRecentlyViewedBanks() {
-        return this.recentlyViewedBanks;
-    }
-
-    /**
      * Update the modal with a list of banks to switch to and enhance the standard selects to Autocomplete fields.
      *
      * @param {String} Selector for the original select element.
@@ -170,7 +114,7 @@ export default class AddQuestionModal extends Modal {
         el.classList.add('btn', 'btn-primary');
         el.textContent = await getString('gobacktoquiz', 'mod_quiz');
         el.setAttribute('data-action', 'go-back');
-        el.setAttribute('value', this.bankModId);
+        el.setAttribute('value', this.bankCmId);
         this.setFooter(el);
 
         this.setBody(
@@ -179,8 +123,8 @@ export default class AddQuestionModal extends Modal {
                 'switch_question_bank',
                 this.getContextId(),
                 {
-                    'quizcmid': this.quizModId,
-                    'bankmodid': this.bankModId,
+                    'quizcmid': this.quizCmId,
+                    'bankcmid': this.bankCmId,
                 })
         );
         const placeholder = await getString('searchbyname', 'mod_quiz');
