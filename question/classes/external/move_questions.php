@@ -111,6 +111,7 @@ class move_questions extends external_api {
 
         if ($returnurlstring) {
             $returnurl = new moodle_url($returnurlstring);
+            $returnurl->param('cmid', $newcontext->instanceid);
             $filter = $returnurl->param('filter');
             if ($filter) {
                 $returnfilters = filter_condition_manager::update_filter_param_to_category(

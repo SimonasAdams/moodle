@@ -59,13 +59,13 @@ class helper {
      * @param \moodle_url $moveurl the url where the move script will point to.
      * @param \moodle_url $returnurl return url in case the form is cancelled.
      * @return array the data to be rendered in the mustache where it contains the dropdown, move url and return url.
-     * @deprecated since Moodle 4.5.
+     * @deprecated since Moodle 4.6.
      * @todo MDL-82413 Final deprecation in Moodle 6.0.
      */
     #[\core\attribute\deprecated(
         replacement: 'replaced by a modal and webservice.
         See qbank_bulkmove/modal_question_bank_bulkmove and core_question_external\move_questions',
-        since: '4.5',
+        since: '4.6',
         mdl: 'MDL-71378'
     )]
     public static function get_displaydata(array $addcontexts, \moodle_url $moveurl, \moodle_url $returnurl): array {
