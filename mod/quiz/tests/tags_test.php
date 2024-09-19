@@ -51,11 +51,12 @@ class tags_test extends \advanced_testcase {
 
         $rc->execute_precheck();
         $results = $rc->get_precheck_results();
-        // Backup contains categories attached to deprecated contexts.
+        // Backup contains categories attached to deprecated contexts so the results should only contain warnings for these.
         $this->assertCount(2, $results['warnings']);
         foreach ($results['warnings'] as $warning) {
-            $this->assertStringStartsWith('The questions category', $warning);
+            $this->assertStringContainsString('will be created at a question bank module context by restore', $warning);
         }
+        $this->assertArrayNotHasKey('errors', $results);
         $rc->execute_plan();
         $rc->destroy();
 
@@ -97,7 +98,7 @@ class tags_test extends \advanced_testcase {
         $this->assertCount(1, $qbanks);
         $qbank = reset($qbanks);
 
-        $defaultcategory = question_get_default_category(\context_module::instance($qbank->id)->id);
+        $defaultcategory = question_get_default_category(\context_module::instance($qbank->id)->id, true);
         $this->assertEquals($defaultcategory->id, $question->category);
         $randomincludingsubcategories = $DB->get_record('question_set_references',
             ['itemid' => reset($slots)->id, 'component' => 'mod_quiz', 'questionarea' => 'slot']);

@@ -305,14 +305,15 @@ class quiz_question_restore_test extends \advanced_testcase {
 
         $rc->execute_precheck();
         $results = $rc->get_precheck_results();
-        $rc->execute_plan();
-        $rc->destroy();
-
-        // Backup contains categories attached to deprecated contexts.
+        // Backup contains categories attached to deprecated contexts so the results should only contain warnings for these.
         $this->assertCount(2, $results['warnings']);
         foreach ($results['warnings'] as $warning) {
-            $this->assertStringStartsWith('The questions category', $warning);
+            $this->assertStringContainsString('will be created at a question bank module context by restore', $warning);
         }
+        $this->assertArrayNotHasKey('errors', $results);
+
+        $rc->execute_plan();
+        $rc->destroy();
 
         // Get the information about the resulting course and check that it is set up correctly.
         $modinfo = get_fast_modinfo($newcourseid);
@@ -420,12 +421,13 @@ class quiz_question_restore_test extends \advanced_testcase {
 
         $rc->execute_precheck();
         $results = $rc->get_precheck_results();
+        // Backup contains categories attached to deprecated contexts, so we should only have warnings for those.
+        $this->assertCount(1, $results['warnings']);
+        $this->assertStringContainsString('will be created at a question bank module context by restore', $results['warnings'][0]);
+        $this->assertArrayNotHasKey('errors', $results);
+
         $rc->execute_plan();
         $rc->destroy();
-
-        // Backup contains categories attached to deprecated contexts.
-        $this->assertCount(1, $results['warnings']);
-        $this->assertStringStartsWith('The questions category', $results['warnings'][0]);
 
         // Get the information about the resulting course and check that it is set up correctly.
         // Each quiz should contain an instance of the random question.

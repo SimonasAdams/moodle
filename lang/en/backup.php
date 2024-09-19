@@ -436,5 +436,6 @@ $string['recyclebin_desc'] = 'Note that these settings will also be used for the
 $string['copycourseheading'] = 'Copy a course';
 $string['backupcourse'] = 'Backup course: {$a}';
 
-// Deprecated since Moodle 4.5.
+// Deprecated since Moodle 4.6.
 $string['configgeneralquestionbank'] = 'If enabled the question bank will be included in backups by default. PLEASE NOTE: Disabling this setting will disable the backup of activities which use the question bank, such as the quiz.';
+$string['generalquestionbank'] = 'Include question bank';

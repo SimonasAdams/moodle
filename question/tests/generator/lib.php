@@ -163,10 +163,10 @@ class core_question_generator extends component_generator_base {
     }
 
     /**
-     * Setup a course category, course, a question category, and 2 questions
-     * for testing.
+     * Set up a course category, a course, a mod_qbank instance, a question category for the mod_qbank instance,
+     * and 2 questions for testing.
      *
-     * @return array The created data objects
+     * @return array of the data objects mentioned above
      */
     public function setup_course_and_questions() {
         $datagenerator = $this->datagenerator;
