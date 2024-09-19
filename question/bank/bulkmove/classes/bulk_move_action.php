@@ -59,7 +59,7 @@ class bulk_move_action extends \core_question\local\bank\bulk_action_base {
         if (!empty($category)) {
             [$categoryid, $contextid] = explode(',', $category);
         } else {
-            $defaultcategory = question_get_default_category($this->qbank->cm->context->id);
+            $defaultcategory = question_get_default_category($this->qbank->cm->context->id, true);
             $categoryid = $defaultcategory->id;
             $contextid = $defaultcategory->contextid;
         }
