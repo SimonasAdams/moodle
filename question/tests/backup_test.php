@@ -40,11 +40,10 @@ class backup_test extends \advanced_testcase {
     /**
      * Makes a backup of the course.
      *
-     * @param int $courseormodid The course|course_module id.
-     * @param string $backuptype defaults to course
+     * @param \stdClass $course The course object.
      * @return string Unique identifier for this backup.
      */
-    protected function backup_course(int $courseormodid, $backuptype = \backup::TYPE_1COURSE) {
+    protected function backup_course($course) {
         global $CFG, $USER;
 
         // Turn off file logging, otherwise it can't delete the file (Windows).
@@ -52,9 +51,33 @@ class backup_test extends \advanced_testcase {
 
         // Do backup with default settings. MODE_IMPORT means it will just
         // create the directory and not zip it.
-        $bc = new \backup_controller($backuptype, $courseormodid,
+        $bc = new \backup_controller(\backup::TYPE_1COURSE, $course->id,
                 \backup::FORMAT_MOODLE, \backup::INTERACTIVE_NO, \backup::MODE_IMPORT,
                 $USER->id);
+        $backupid = $bc->get_backupid();
+        $bc->execute_plan();
+        $bc->destroy();
+
+        return $backupid;
+    }
+
+    /**
+     * Makes a backup of a course module.
+     *
+     * @param int $modid The course_module id.
+     * @return string Unique identifier for this backup.
+     */
+    protected function backup_course_module(int $modid) {
+        global $CFG, $USER;
+
+        // Turn off file logging, otherwise it can't delete the file (Windows).
+        $CFG->backup_file_logger_level = \backup::LOG_NONE;
+
+        // Do backup with default settings. MODE_IMPORT means it will just
+        // create the directory and not zip it.
+        $bc = new \backup_controller(\backup::TYPE_1ACTIVITY, $modid,
+            \backup::FORMAT_MOODLE, \backup::INTERACTIVE_NO, \backup::MODE_IMPORT,
+            $USER->id);
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
         $bc->destroy();
@@ -125,8 +148,8 @@ class backup_test extends \advanced_testcase {
         quiz_add_quiz_question($question1->id, $quiz);
 
         // Backup the course twice for future use.
-        $backupid1 = $this->backup_course($course->id);
-        $backupid2 = $this->backup_course($course->id);
+        $backupid1 = $this->backup_course($course);
+        $backupid2 = $this->backup_course($course);
 
         // Now delete almost everything.
         delete_course($course, false);
@@ -408,7 +431,7 @@ class backup_test extends \advanced_testcase {
         $course = self::getDataGenerator()->create_course();
 
         // Create a question bank module instance, a category for that module, and a question for that category.
-        $qbank = self::getDataGenerator()->create_module('qbank', ['type' => question_bank_helper::STANDARD, 'course' => $course->id]);
+        $qbank = self::getDataGenerator()->create_module('qbank', ['type' => question_bank_helper::TYPE_STANDARD, 'course' => $course->id]);
         $qbankcontext = \context_module::instance($qbank->cmid);
         $bankqcat = $qgen->create_question_category(['contextid' => $qbankcontext->id]);
         $bankquestion = $qgen->create_question('shortanswer',
@@ -458,7 +481,7 @@ class backup_test extends \advanced_testcase {
         $oldquiz = $data->quiz;
 
         // Backup ONLY the quiz module.
-        $backupid = $this->backup_course($oldquiz->cmid, \backup::TYPE_1ACTIVITY);
+        $backupid = $this->backup_course_module($oldquiz->cmid);
 
         // Create a new course to restore to.
         $newcourse = self::getDataGenerator()->create_course();
@@ -519,7 +542,7 @@ class backup_test extends \advanced_testcase {
         $oldcourse = $data->course;
 
         // Backup the course.
-        $backupid = $this->backup_course($oldcourse->id, \backup::TYPE_1COURSE);
+        $backupid = $this->backup_course($oldcourse);
 
         // Create a new course to restore to.
         $newcourse = self::getDataGenerator()->create_course();
@@ -548,7 +571,7 @@ class backup_test extends \advanced_testcase {
         $qbanks = array_filter($qbanks, static function($bank) {
             global $DB;
             $modrecord = $DB->get_record('qbank', ['id' => $bank->instance]);
-            return $modrecord->type === question_bank_helper::STANDARD;
+            return $modrecord->type === question_bank_helper::TYPE_STANDARD;
         });
         $this->assertCount(1, $qbanks);
         $qbank = reset($qbanks);
@@ -600,7 +623,7 @@ class backup_test extends \advanced_testcase {
         $qbanks = array_filter($qbanks, static function($bank) {
             global $DB;
             $modrecord = $DB->get_record('qbank', ['id' => $bank->instance]);
-            return $modrecord->type === question_bank_helper::SYSTEM;
+            return $modrecord->type === question_bank_helper::TYPE_SYSTEM;
         });
         $this->assertCount(1, $qbanks);
         $qbank = reset($qbanks);

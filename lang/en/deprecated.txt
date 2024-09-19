@@ -135,3 +135,6 @@ filterbyname,core_grades
 filterfirstactive,core_grades
 filterlastactive,core_grades
 configgeneralquestionbank,core_backup
+generalquestionbank,core_backup
+cannotdeletecategoryquestions,core_error
+errordeletingquestionsfromcategory,core_question

@@ -248,7 +248,7 @@ class questionlib_test extends \advanced_testcase {
         $qbanks = array_filter($qbanks, static function($bank) {
             global $DB;
             $modrecord = $DB->get_record('qbank', ['id' => $bank->instance]);
-            return $modrecord->type === question_bank_helper::STANDARD;
+            return $modrecord->type === question_bank_helper::TYPE_STANDARD;
         });
         $qbank = reset($qbanks);
 

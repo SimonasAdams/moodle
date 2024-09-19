@@ -1444,5 +1444,14 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2024100100.02);
     }
 
+    if ($oldversion < 2024101000.00) {
+        // Delete settings that were removed from code.
+        $settings = ['backup_general_questionbank', 'backup_import_questionbank', 'backup_auto_questionbank'];
+        array_walk($settings, static fn ($setting) => unset_config($setting, 'backup'));
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024101000.00);
+    }
+
     return true;
 }

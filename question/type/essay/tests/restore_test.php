@@ -16,11 +16,6 @@
 
 namespace qtype_essay;
 
-use backup;
-use backup_controller;
-use restore_controller;
-use restore_dbops;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -43,7 +38,7 @@ class restore_test extends \restore_date_testcase {
      * That is what is tested in this file.
      */
     public function test_restore_create_missing_qtype_essay_options(): void {
-        global $DB, $CFG, $USER;
+        global $DB;
 
         // Create a course with one essay question in its question bank.
         $generator = $this->getDataGenerator();

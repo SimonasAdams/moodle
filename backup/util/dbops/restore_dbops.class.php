@@ -644,7 +644,7 @@ abstract class restore_dbops {
                     } else {
                         // 3b) User cannot. Move ALL the qcats to the fallback i.e. a default qbank module, warn. End qcat loop.
                         $course = get_course($courseid);
-                        $course->fullname = 'Course restore';
+                        $course->fullname = get_string('courserestore', 'mod_qbank');
                         $module = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
                         $fallbackcontext = $module->context;
                         foreach ($categories as $movedcat) {
@@ -692,7 +692,7 @@ abstract class restore_dbops {
                             } else {
                                 // 5b) User cannot. Move ALL the qcats to the fallback i.e. a default qbank module, warn. End qcat loop.
                                 $course = get_course($courseid);
-                                $course->fullname = 'Course restore';
+                                $course->fullname = get_string('courserestore', 'mod_qbank');
                                 $module = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
                                 $fallbackcontext = $module->context;
                                 foreach ($categories as $movedcat) {
@@ -804,59 +804,48 @@ abstract class restore_dbops {
      * @param array $categories categories to find target context for
      * @param int $courseid course to restore to
      * @param int $contextlevel contextlevel to search for the target context
-     * @return bool|\core\context
+     * @return bool|\core\context target context or false if no target context found
      */
     public static function restore_find_best_target_context($categories, $courseid, $contextlevel) {
         global $DB;
 
         $targetcontext = false;
 
-        // Depending on $contextlevel, we perform different actions.
-        switch ($contextlevel) {
-            // These contexts are deprecated now so put them into the system type qbank instance on the new course.
-            case CONTEXT_SYSTEM:
-            case CONTEXT_COURSECAT:
-            case CONTEXT_COURSE:
-                break;
-            // If context module we need to find any existing module instances with categories matching the category stamps
-            // from the backup. If multiple matches are found, that means that there is some annoying
-            // qbank "fragmentation" in the categories, so we'll fall back
-            // to creating a mod_qbank instance at course level and putting the categories there.
-            case CONTEXT_MODULE:
-                $stamps = [];
-                foreach ($categories as $category) {
-                    $stamps[] = $category->stamp;
+        // If context module we need to find any existing module instances with categories matching the category stamps
+        // from the backup. If multiple matches are found, that means that there is some annoying
+        // qbank "fragmentation" in the categories, so we'll fall back
+        // to creating a mod_qbank instance at course level and putting the categories there.
+        if ($contextlevel == CONTEXT_MODULE) {
+            $stamps = [];
+            foreach ($categories as $category) {
+                $stamps[] = $category->stamp;
+            }
+            $modinfo = get_fast_modinfo($courseid);
+
+            // Get contextids of modules from the course that support publishing questions.
+            $supportedcontextids = [];
+            foreach ($modinfo->get_cms() as $cm) {
+                if (plugin_supports('mod', $cm->modname, FEATURE_PUBLISHES_QUESTIONS, false)) {
+                    $supportedcontextids[] = $cm->context->id;
                 }
-                $sql = 'SELECT c.*, m.name AS modulename
-                        FROM {context} c
-                        JOIN {course_modules} cm ON c.instanceid = cm.id
-                        JOIN {course} co ON co.id = cm.course
-                        JOIN {modules} m ON m.id = cm.module
-                        WHERE c.contextlevel = :contextlevel
-                        AND co.id = :courseid';
-                $allcontexts = $DB->get_records_sql($sql, ['contextlevel' => CONTEXT_MODULE, 'courseid' => $courseid]);
-                $supportedcontexts = array_filter(
-                        $allcontexts,
-                        static fn($context) => plugin_supports('mod', $context->modulename, FEATURE_PUBLISHES_QUESTIONS, false)
-                );
-                if (!empty($stamps) && !empty($supportedcontexts)) {
-                    [$stampsql, $stampparams] = $DB->get_in_or_equal($stamps);
-                    $supportedcontexts = array_map(static fn($context) => $context->id, $supportedcontexts);
-                    [$contextsql, $contextparams] = $DB->get_in_or_equal($supportedcontexts);
-                    $sql = "SELECT DISTINCT contextid
-                            FROM {question_categories}
-                            WHERE stamp {$stampsql}
-                            AND contextid {$contextsql}";
-                    $params = array_merge($stampparams, $contextparams);
-                    $matchingcontexts = $DB->get_records_sql($sql, $params);
-                    // Only if ONE and ONLY ONE context is found, use it as valid target
-                    if (count($matchingcontexts) === 1) {
-                        $targetcontext = context::instance_by_id(reset($matchingcontexts)->contextid);
-                    }
+            }
+
+            if (!empty($stamps) && !empty($supportedcontextids)) {
+                [$stampsql, $stampparams] = $DB->get_in_or_equal($stamps);
+                [$contextsql, $contextparams] = $DB->get_in_or_equal($supportedcontextids);
+                $sql = "SELECT DISTINCT contextid
+                          FROM {question_categories}
+                         WHERE stamp {$stampsql}
+                           AND contextid {$contextsql}";
+                $params = array_merge($stampparams, $contextparams);
+                $matchingcontexts = $DB->get_records_sql($sql, $params);
+                // Only if ONE and ONLY ONE context is found, use it as valid target
+                if (count($matchingcontexts) === 1) {
+                    $targetcontext = context::instance_by_id(reset($matchingcontexts)->contextid);
                 }
-                // We don't have a target so set as course context until the module is creeated and then assign to the module context.
-                $targetcontext = $targetcontext ?: context_course::instance($courseid);
-                break;
+            }
+            // We don't have a target so set as course context until the module is created and then assign to the module context.
+            $targetcontext = $targetcontext ?: context_course::instance($courseid);
         }
 
         return $targetcontext;
