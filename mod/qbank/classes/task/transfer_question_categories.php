@@ -23,7 +23,6 @@ use core\task\manager;
 use core_course_category;
 use core_question\local\bank\question_bank_helper;
 use stdClass;
-use Throwable;
 
 /**
  * /**
@@ -47,7 +46,7 @@ use Throwable;
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class install extends adhoc_task {
+class transfer_question_categories extends adhoc_task {
 
     /**
      * Run the install task.
@@ -59,8 +58,9 @@ class install extends adhoc_task {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/course/modlib.php');
+        require_once($CFG->libdir . '/questionlib.php');
 
-        foreach ($DB->get_records('question_categories', ['parent' => 0]) as $oldtopcategory) {
+        foreach ($DB->get_recordset('question_categories', ['parent' => 0]) as $oldtopcategory) {
 
             if (!$oldcontext = context::instance_by_id($oldtopcategory->contextid, IGNORE_MISSING)) {
                 // That context does not exist anymore, we will treat these as if they were at site context level.
@@ -69,62 +69,57 @@ class install extends adhoc_task {
 
             $trans = $DB->start_delegated_transaction();
 
-            try {
-                // Remove any questions and categories below the current 'top' if they are unused.
-                $subcategories = $DB->get_records_select('question_categories',
-                    'parent <> 0 AND contextid = :contextid',
-                    ['contextid' => $oldtopcategory->contextid]
-                );
-                // This gives us categories in parent -> child order so array_reverse it,
-                // because we should process stale categories from the bottom up.
-                $subcategories = array_reverse(\sort_categories_by_tree($subcategories, $oldtopcategory->id));
-                foreach ($subcategories as $subcategory) {
-                    \qbank_managecategories\helper::question_remove_stale_questions_from_category($subcategory->id);
-                    if (!question_category_in_use($subcategory->id)) {
-                        question_category_delete_safe($subcategory);
-                    }
+            // Remove any unused questions if they are marked as deleted.
+            // Also, if a category contained questions which were all unusable then delete it as well.
+            $subcategories = $DB->get_records_select('question_categories',
+                'parent <> 0 AND contextid = :contextid',
+                ['contextid' => $oldtopcategory->contextid]
+            );
+            // This gives us categories in parent -> child order so array_reverse it,
+            // because we should process stale categories from the bottom up.
+            $subcategories = array_reverse(\sort_categories_by_tree($subcategories, $oldtopcategory->id));
+            foreach ($subcategories as $subcategory) {
+                \qbank_managecategories\helper::question_remove_stale_questions_from_category($subcategory->id);
+                if (!question_category_in_use($subcategory->id)) {
+                    question_category_delete_safe($subcategory);
                 }
-
-                // We don't want to transfer any categories at valid contexts i.e. quiz modules.
-                if ($oldcontext->contextlevel === CONTEXT_MODULE) {
-                    $trans->allow_commit();
-                    continue;
-                }
-
-                // Category is in use so let's process it. Firstly, a course and mod instance is needed.
-                switch ($oldcontext->contextlevel) {
-                    case CONTEXT_SYSTEM:
-                        $course = get_site();
-                        $bankname = get_string('systembank', 'mod_qbank');
-                        break;
-                    case CONTEXT_COURSECAT:
-                        $coursecategory = core_course_category::get($oldcontext->instanceid);
-                        $courseshortname = "{$coursecategory->name}-{$coursecategory->id}";
-                        $course = $this->create_course($coursecategory, $courseshortname);
-                        $bankname = get_string("sharedbank", "mod_qbank", $coursecategory->name);
-                        break;
-                    case CONTEXT_COURSE:
-                        $course = get_course($oldcontext->instanceid);
-                        $bankname = get_string("sharedbank", "mod_qbank", $course->shortname);
-                        break;
-                    default:
-                        // This shouldn't be possible, so we can't really transfer it.
-                        // We should commit any pre-transfer category cleanup though.
-                        $trans->allow_commit();
-                        continue 2;
-                }
-
-                if (!$newmod = question_bank_helper::get_default_open_instance_system_type($course)) {
-                    $newmod = question_bank_helper::create_default_open_instance($course, $bankname, question_bank_helper::SYSTEM);
-                }
-
-                // We have our new mod instance, now move all the subcategories of the old 'top' category to this new context.
-                $this->move_question_category($oldtopcategory, $newmod->context);
-
-            } catch (Throwable $t) {
-                debugging("Problem encountered processing categoryid: {$oldtopcategory->id}");
-                $trans->rollback($t);
             }
+
+            // We don't want to transfer any categories at valid contexts i.e. quiz modules.
+            if ($oldcontext->contextlevel === CONTEXT_MODULE) {
+                $trans->allow_commit();
+                continue;
+            }
+
+            // Category is in use so let's process it. Firstly, a course and mod instance is needed.
+            switch ($oldcontext->contextlevel) {
+                case CONTEXT_SYSTEM:
+                    $course = get_site();
+                    $bankname = get_string('systembank', 'mod_qbank');
+                    break;
+                case CONTEXT_COURSECAT:
+                    $coursecategory = core_course_category::get($oldcontext->instanceid);
+                    $courseshortname = "{$coursecategory->name}-{$coursecategory->id}";
+                    $course = $this->create_course($coursecategory, $courseshortname);
+                    $bankname = get_string("sharedbank", "mod_qbank", $coursecategory->name);
+                    break;
+                case CONTEXT_COURSE:
+                    $course = get_course($oldcontext->instanceid);
+                    $bankname = get_string("sharedbank", "mod_qbank", $course->shortname);
+                    break;
+                default:
+                    // This shouldn't be possible, so we can't really transfer it.
+                    // We should commit any pre-transfer category cleanup though.
+                    $trans->allow_commit();
+                    continue 2;
+            }
+
+            if (!$newmod = question_bank_helper::get_default_open_instance_system_type($course)) {
+                $newmod = question_bank_helper::create_default_open_instance($course, $bankname, question_bank_helper::TYPE_SYSTEM);
+            }
+
+            // We have our new mod instance, now move all the subcategories of the old 'top' category to this new context.
+            $this->move_question_category($oldtopcategory, $newmod->context);
 
             // Job done, lets delete the old 'top' category.
             $DB->delete_records('question_categories', ['id' => $oldtopcategory->id]);
@@ -142,7 +137,7 @@ class install extends adhoc_task {
     protected function create_course(\core_course_category $coursecategory, string $shortname): stdClass {
         $data = (object) [
             'enablecompletion' => 0,
-            'fullname' => "Shared teaching resources for category: {$coursecategory->name}",
+            'fullname' => get_string('coursecategory', 'mod_qbank', $coursecategory->name),
             'shortname' => $shortname,
             'category' => $coursecategory->id,
         ];
@@ -169,7 +164,6 @@ class install extends adhoc_task {
     }
 
     /**
-     * TODO: Remove this method and calling code in a few major versions time once we know all sites have upgraded.
      * This task should only ever be called once, on install/upgrade. But we may need to warn the user on some pages
      * that some banks may not have been transferred yet if it failed or hasn't yet completed.
      *
