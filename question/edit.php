@@ -65,8 +65,8 @@ $PAGE->set_heading($COURSE->fullname);
 $PAGE->activityheader->disable();
 
 echo $OUTPUT->header();
-if (!\mod_qbank\task\install::has_completed_successfully()) {
-    echo $OUTPUT->notification(get_string('installnotfinished', 'mod_qbank'), \core\output\notification::NOTIFY_WARNING);
+if (!\mod_qbank\task\transfer_question_categories::has_completed_successfully()) {
+    echo $OUTPUT->notification(get_string('transfernotfinished', 'mod_qbank'), \core\output\notification::NOTIFY_WARNING);
 }
 
 // Print horizontal nav if needed.

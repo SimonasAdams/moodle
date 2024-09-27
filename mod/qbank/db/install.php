@@ -23,6 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 function xmldb_qbank_install(): void {
-    $task = new \mod_qbank\task\install();
+    $task = new \mod_qbank\task\transfer_question_categories();
     \core\task\manager::queue_adhoc_task($task);
 }

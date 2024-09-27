@@ -14,6 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace mod_qbank;
+
+use context_course;
+use context_coursecat;
+use context_module;
+use context_system;
+use stdClass;
 use core_question\local\bank\question_version_status;
 
 /**
@@ -32,9 +39,9 @@ use core_question\local\bank\question_version_status;
  * @copyright  2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \mod_qbank\task\install
+ * @covers \mod_qbank\task\transfer_question_categories
  */
-class install_test extends advanced_testcase {
+final class transfer_question_categories_test extends \advanced_testcase {
 
     /** @var \core\context\coursecat test course category context */
     private \core\context\coursecat $coursecatcontext;
@@ -309,7 +316,7 @@ class install_test extends advanced_testcase {
         $this->resetAfterTest();
         $this->setup_pre_install_data();
 
-        $task = new \mod_qbank\task\install();
+        $task = new \mod_qbank\task\transfer_question_categories();
         $task->execute();
 
         // Site context checks:

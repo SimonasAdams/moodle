@@ -266,8 +266,13 @@ function question_category_delete_safe($category): void {
             }
         }
         if (!empty($questionids)) {
-            $qbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type(get_site(), true);
-            $name = $context !== false ? $context->get_context_name() : get_string('unknown', 'question');
+            $name = get_string('unknown', 'question');
+            if ($context !== false) {
+                $name = $context->get_context_name();
+                $parentcontext = $context->get_course_context(false);
+                $course = $parentcontext ? get_course($parentcontext->instanceid) : get_site();
+            }
+            $qbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
             question_save_from_deletion(array_keys($questionids), $qbank->context->id, $name, $rescue);
         }
     }
