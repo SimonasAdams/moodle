@@ -1362,7 +1362,10 @@ class view {
         $pageingurl = new \moodle_url($this->base_url());
         // TODO MDL-82312: it really should not be necessary to set filter here, and not like this.
         // This should be handled in baseurl, but it isn't so we do this so Moodle basically works for now.
-        $pageingurl->param('filter', json_encode($this->pagevars['filter']));
+        $json = json_encode($this->pagevars['filter']);
+        $urlencoded = urlencode($json);
+        $pageingurl->param('filter', $urlencoded);
+        //$pageingurl->param('filter', json_encode($this->pagevars['filter']));
         $pagingbar = new \paging_bar($this->totalcount, $page, $perpage, $pageingurl);
         $pagingbar->pagevar = 'qpage';
         echo $OUTPUT->render($pagingbar);

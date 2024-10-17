@@ -2330,7 +2330,8 @@ function mod_quiz_output_fragment_quiz_question_bank($args): string {
     // Ensure we load the view with any filters being applied.
     if (!empty($args['querystring'])) {
         $pageurl = new moodle_url($args['querystring']);
-        if ($filterparam = $pageurl->get_param('filter')) {
+        if (!empty($pageurl->get_param('filter'))) {
+            $filterparam = urldecode($pageurl->get_param('filter'));
             $params['filter'] = $filterparam;
         }
     }
