@@ -2326,14 +2326,8 @@ function mod_quiz_output_fragment_quiz_question_bank($args): string {
     // Retrieve params.
     $params = [];
     $extraparams = [];
-
-    // Ensure we load the view with any filters being applied.
-    if (!empty($args['querystring'])) {
-        $pageurl = new moodle_url($args['querystring']);
-        if ($filterparam = $pageurl->get_param('filter')) {
-            $params['filter'] = $filterparam;
-        }
-    }
+    $querystring = parse_url($args['querystring'], PHP_URL_QUERY);
+    parse_str($querystring, $params);
 
     // Load the bank we are looking at rather than always the quiz module itself.
     $params['cmid'] = clean_param($args['bankcmid'], PARAM_INT);
