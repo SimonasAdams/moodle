@@ -886,9 +886,17 @@ class quiz_statistics_report extends report_base {
      */
     public function clear_cached_data($qubaids) {
         global $DB;
+        $hashcode = $qubaids->get_hash_code();
+
+        $analysisids = $DB->get_fieldset('question_response_analysis', 'id', ['hashcode' => $hashcode]);
+        if (!empty($analysisids)) {
+            [$insql, $params] = $DB->get_in_or_equal($analysisids);
+            $DB->delete_records_select('question_response_count', 'analysisid ' . $insql, $params);
+        }
+
         $DB->delete_records('quiz_statistics', ['hashcode' => $qubaids->get_hash_code()]);
-        $DB->delete_records('question_statistics', ['hashcode' => $qubaids->get_hash_code()]);
-        $DB->delete_records('question_response_analysis', ['hashcode' => $qubaids->get_hash_code()]);
+        $DB->delete_records('question_statistics', ['hashcode' => $hashcode]);
+        $DB->delete_records('question_response_analysis', ['hashcode' => $hashcode]);
     }
 
     /**
