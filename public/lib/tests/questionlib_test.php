@@ -307,6 +307,75 @@ final class questionlib_test extends \advanced_testcase {
     }
 
     /**
+     * Test that deleting a question removes related statistics and response-analysis rows.
+     * @covers ::question_delete_question
+     * @return void
+     */
+    public function test_question_delete_question_removes_statistics_data(): void {
+        global $DB;
+
+        $context = $this->create_course_and_question_bank();
+        /** @var \core_question_generator $qgen */
+        $qgen = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $qcat = $qgen->create_question_category(['contextid' => $context->id]);
+        $q1 = $qgen->create_question('shortanswer', null, ['category' => $qcat->id]);
+        $q2 = $qgen->create_question('shortanswer', null, ['category' => $qcat->id]);
+
+        $now = time();
+        $q1analysisid = $DB->insert_record('question_response_analysis', (object) [
+            'hashcode' => sha1('q1-analysis'),
+            'whichtries' => \question_attempt::LAST_TRY,
+            'timemodified' => $now,
+            'questionid' => $q1->id,
+            'subqid' => '1',
+            'credit' => 1,
+        ]);
+        $DB->insert_record('question_response_count', (object) [
+            'analysisid' => $q1analysisid,
+            'try' => 1,
+            'rcount' => 3,
+        ], false);
+        $DB->insert_record('question_statistics', (object) [
+            'hashcode' => sha1('q1-stats'),
+            'timemodified' => $now,
+            'questionid' => $q1->id,
+            'subquestion' => 1,
+            's' => 1,
+        ], false);
+
+        $q2analysisid = $DB->insert_record('question_response_analysis', (object) [
+            'hashcode' => sha1('q2-analysis'),
+            'whichtries' => \question_attempt::LAST_TRY,
+            'timemodified' => $now,
+            'questionid' => $q2->id,
+            'subqid' => '1',
+            'credit' => 1,
+        ]);
+        $DB->insert_record('question_response_count', (object) [
+            'analysisid' => $q2analysisid,
+            'try' => 1,
+            'rcount' => 5,
+        ], false);
+        $DB->insert_record('question_statistics', (object) [
+            'hashcode' => sha1('q2-stats'),
+            'timemodified' => $now,
+            'questionid' => $q2->id,
+            'subquestion' => 1,
+            's' => 1,
+        ], false);
+
+        question_delete_question($q1->id);
+
+        $this->assertFalse($DB->record_exists('question_statistics', ['questionid' => $q1->id]));
+        $this->assertFalse($DB->record_exists('question_response_analysis', ['questionid' => $q1->id]));
+        $this->assertFalse($DB->record_exists('question_response_count', ['analysisid' => $q1analysisid]));
+
+        $this->assertTrue($DB->record_exists('question_statistics', ['questionid' => $q2->id]));
+        $this->assertTrue($DB->record_exists('question_response_analysis', ['questionid' => $q2->id]));
+        $this->assertTrue($DB->record_exists('question_response_count', ['analysisid' => $q2analysisid]));
+    }
+
+    /**
      * Test that deleting a broken question from the question bank does not cause fatal errors.
      */
     public function test_question_delete_question_broken_data(): void {

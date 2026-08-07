@@ -2418,5 +2418,27 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2026101600.00);
     }
 
+    if ($oldversion < 2026102100.01) {
+        $orphanedanalysiscount = $DB->count_records_sql(
+            'SELECT COUNT(*)
+               FROM {question_response_analysis} qra
+          LEFT JOIN {question} q ON q.id = qra.questionid
+              WHERE q.id IS NULL',
+        );
+
+        if ($orphanedanalysiscount > 500000) {
+            upgrade_log(
+                UPGRADE_LOG_NOTICE,
+                'core',
+                'Large orphaned question statistics cleanup to process',
+                'Found ' . $orphanedanalysiscount . ' orphaned question_response_analysis rows, this could take some time.',
+            );
+        }
+
+        upgrade_cleanup_orphaned_question_statistics_data();
+
+        upgrade_main_savepoint(true, 2026102100.01);
+    }
+
     return true;
 }

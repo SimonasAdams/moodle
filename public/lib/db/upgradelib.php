@@ -1611,6 +1611,59 @@ function upgrade_fix_file_timestamps() {
 }
 
 /**
+ * Remove orphaned question statistics and response analysis data.
+ *
+ * This removes all rows tied to missing questions via question_delete_statistics_data(),
+ * and also clears orphaned count/statistics rows that are no longer reachable by that helper.
+ *
+ * @param int $batchsize Number of orphaned question IDs to process per batch.
+ * @return void
+ */
+function upgrade_cleanup_orphaned_question_statistics_data(int $batchsize = 1000): void {
+    global $CFG, $DB;
+
+    require_once($CFG->dirroot . '/lib/questionlib.php');
+
+    do {
+        $questionids = $DB->get_records_sql(
+            'SELECT DISTINCT qra.questionid AS id
+               FROM {question_response_analysis} qra
+          LEFT JOIN {question} q ON q.id = qra.questionid
+              WHERE q.id IS NULL
+           ORDER BY qra.questionid',
+            [],
+            0,
+            $batchsize,
+        );
+
+        foreach (array_keys($questionids) as $questionid) {
+            question_delete_statistics_data((int) $questionid);
+        }
+
+        upgrade_set_timeout();
+    } while (count($questionids) === $batchsize);
+
+    // Clean up any leftover broken references.
+    $DB->delete_records_select(
+        'question_response_count',
+        'NOT EXISTS (
+            SELECT 1
+              FROM {question_response_analysis} qra
+             WHERE qra.id = {question_response_count}.analysisid
+        )',
+    );
+
+    $DB->delete_records_select(
+        'question_statistics',
+        'NOT EXISTS (
+            SELECT 1
+              FROM {question} q
+             WHERE q.id = {question_statistics}.questionid
+        )',
+    );
+}
+
+/**
  * Upgrade helper to add foreign keys and indexes for MDL-49795
  */
 function upgrade_add_foreign_key_and_indexes() {
