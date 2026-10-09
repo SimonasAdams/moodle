@@ -148,6 +148,28 @@ class analysis_for_actual_response {
     }
 
     /**
+     * Delete cached response analysis for a question.
+     *
+     * @param int $questionid The question id.
+     * @return void
+     */
+    public static function delete_cache(int $questionid): void {
+        global $DB;
+
+        $transaction = $DB->start_delegated_transaction();
+
+        $analysisids = $DB->get_fieldset('question_response_analysis', 'id', ['questionid' => $questionid]);
+        if (!empty($analysisids)) {
+            [$insql, $params] = $DB->get_in_or_equal($analysisids);
+            $DB->delete_records_select('question_response_count', 'analysisid ' . $insql, $params);
+        }
+
+        $DB->delete_records('question_response_analysis', ['questionid' => $questionid]);
+
+        $transaction->allow_commit();
+    }
+
+    /**
      * Returns an object with a property for each column of the question response analysis table.
      *
      * @param string $partid

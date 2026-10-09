@@ -239,6 +239,18 @@ class calculated {
     }
 
     /**
+     * Delete cached question statistics for a question.
+     *
+     * @param int $questionid The question id.
+     * @return void
+     */
+    public static function delete_cache(int $questionid): void {
+        global $DB;
+
+        $DB->delete_records('question_statistics', ['questionid' => $questionid]);
+    }
+
+    /**
      * Load properties of this class from db record.
      *
      * @param object $record Given a record from 'question_statistics' copy stats from record to properties.
