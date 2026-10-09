@@ -332,28 +332,6 @@ function delete_question_bank_entry($entryid): void {
 }
 
 /**
- * Delete question statistics and response analysis data for a question.
- *
- * @param int $questionid The question ID.
- */
-function question_delete_statistics_data(int $questionid): void {
-    global $DB;
-
-    $transaction = $DB->start_delegated_transaction();
-
-    $analysisids = $DB->get_fieldset('question_response_analysis', 'id', ['questionid' => $questionid]);
-    if (!empty($analysisids)) {
-        [$insql, $params] = $DB->get_in_or_equal($analysisids);
-        $DB->delete_records_select('question_response_count', 'analysisid ' . $insql, $params);
-    }
-
-    $DB->delete_records('question_response_analysis', ['questionid' => $questionid]);
-    $DB->delete_records('question_statistics', ['questionid' => $questionid]);
-
-    $transaction->allow_commit();
-}
-
-/**
  * Deletes question and all associated data from the database
  *
  * It will not delete a question if it is used somewhere, instead it will just delete the reference.
@@ -423,7 +401,9 @@ function question_delete_question($questionid): void {
         }
     }
 
-    question_delete_statistics_data($question->id);
+    // Delete question statistics and response analysis data for this question.
+    \core_question\statistics\responses\analysis_for_actual_response::delete_cache($question->id);
+    \core_question\statistics\questions\calculated::delete_cache($question->id);
 
     // Finally delete the question record itself.
     $DB->delete_records('question', ['id' => $question->id]);
