@@ -59,13 +59,11 @@ class cleanup_orphaned_question_statistics_task extends adhoc_task {
            ORDER BY qra.questionid'
         );
 
-        $done = 0;
         foreach ($questionids as $questionid) {
             $transaction = $DB->start_delegated_transaction();
             \core_question\statistics\responses\analysis_for_actual_response::delete_cache((int) $questionid);
             \core_question\statistics\questions\calculated::delete_cache((int) $questionid);
             $transaction->allow_commit();
-            $done++;
 
             // The task might be running for a long time. If a graceful exit is requested, queue this task again.
             if (shutdown::should_gracefully_exit()) {
@@ -93,7 +91,5 @@ class cleanup_orphaned_question_statistics_task extends adhoc_task {
                  WHERE q.id = {question_statistics}.questionid
             )'
         );
-
-        mtrace("Cleaned up {$done} orphaned question statistics entries.");
     }
 }
