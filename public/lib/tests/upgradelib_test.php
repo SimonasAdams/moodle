@@ -2481,8 +2481,8 @@ calendar,core_calendar|/calendar/view.php?view=month',
         $DB->delete_records('question', ['id' => $orphanedstatisticquestion->id]);
         $DB->delete_records('question_response_analysis', ['id' => $orphanedcountanalysisid]);
 
-        // Run the clean up function.
-        upgrade_cleanup_orphaned_question_statistics_data();
+        // Run the clean-up task.
+        (new \core\task\cleanup_orphaned_question_statistics_task())->execute();
 
         // Assert valid data remains.
         $this->assertTrue($DB->record_exists('question_response_analysis', ['id' => $keptanalysisid]));
