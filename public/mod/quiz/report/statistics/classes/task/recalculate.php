@@ -17,6 +17,8 @@
 namespace quiz_statistics\task;
 
 use core\dml\sql_join;
+use core_question\statistics\questions\calculated;
+use core_question\statistics\responses\analysis_for_actual_response;
 use mod_quiz\quiz_attempt;
 use quiz_statistics_report;
 use core\task\manager;
@@ -101,7 +103,8 @@ class recalculate extends \core\task\adhoc_task {
         );
 
         $report = new quiz_statistics_report();
-        $report->clear_cached_data($qubaids);
+        analysis_for_actual_response::delete_cache_by_hashcode($qubaids->get_hash_code());
+        calculated::delete_cache_by_hashcode($qubaids->get_hash_code());
         $report->calculate_questions_stats_for_question_bank($quiz->id);
         mtrace('    Calculations completed at ' . userdate(time(), $dateformat) . '.');
     }
