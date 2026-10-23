@@ -25,7 +25,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_question\statistics\questions\calculated;
 use core_question\statistics\responses\analyser;
+use core_question\statistics\responses\analysis_for_actual_response;
 use mod_quiz\local\reports\report_base;
 use core_question\statistics\questions\all_calculated_for_qubaid_condition;
 use quiz_statistics\task\recalculate;
@@ -882,21 +884,20 @@ class quiz_statistics_report extends report_base {
      * Clear the cached data for a particular report configuration. This will trigger a re-computation the next time the report
      * is displayed.
      *
+     * @deprecated since Moodle 5.3, use analysis_for_actual_response::delete_cache_by_hashcode()
+     *  & calculated::delete_cache_by_hashcode() instead.
      * @param $qubaids qubaid_condition
+     * @return void
      */
-    public function clear_cached_data($qubaids) {
-        global $DB;
-        $hashcode = $qubaids->get_hash_code();
-
-        $analysisids = $DB->get_fieldset('question_response_analysis', 'id', ['hashcode' => $hashcode]);
-        if (!empty($analysisids)) {
-            [$insql, $params] = $DB->get_in_or_equal($analysisids);
-            $DB->delete_records_select('question_response_count', 'analysisid ' . $insql, $params);
-        }
-
-        $DB->delete_records('quiz_statistics', ['hashcode' => $qubaids->get_hash_code()]);
-        $DB->delete_records('question_statistics', ['hashcode' => $hashcode]);
-        $DB->delete_records('question_response_analysis', ['hashcode' => $hashcode]);
+    #[\core\attribute\deprecated('analysis_for_actual_response::delete_cache_by_hashcode()', since: '5.3', mdl: 'MDL-88784')]
+    public function clear_cached_data($qubaids): void {
+        trigger_deprecation(
+            'mod_quiz',
+            '5.3',
+            'quiz_statistics_report::clear_cached_data() is deprecated, use analysis_for_actual_response::delete_cache_by_hashcode() instead.'
+        );
+        analysis_for_actual_response::delete_cache_by_hashcode($qubaids->get_hash_code());
+        calculated::delete_cache_by_hashcode($qubaids->get_hash_code());
     }
 
     /**
