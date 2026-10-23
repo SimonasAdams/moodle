@@ -16,6 +16,7 @@
 namespace quiz_statistics;
 
 use core\dml\sql_join;
+use core_question\statistics\responses\analysis_for_actual_response;
 use mod_quiz\hook\attempt_state_changed;
 use mod_quiz\hook\structure_modified;
 use mod_quiz\quiz_attempt;
@@ -47,8 +48,8 @@ class hook_callbacks {
             $quiz->grademethod
         );
 
-        $report = new \quiz_statistics_report();
-        $report->clear_cached_data($qubaids);
+        analysis_for_actual_response::delete_cache_by_hashcode($qubaids->get_hash_code());
+        \core_question\statistics\questions\calculated::delete_cache_by_hashcode($qubaids->get_hash_code());
     }
 
     /**
