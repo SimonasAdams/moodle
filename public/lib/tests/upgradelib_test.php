@@ -2157,4 +2157,197 @@ calendar,core_calendar|/calendar/view.php?view=month',
 
         $this->assertTrue(empty($CFG->{'gradebook_calculations_freeze_' . $course->id}));
     }
+
+    /**
+     * Test that orphaned question statistics clean-up removes all hanging records.
+     *
+     * @covers ::upgrade_cleanup_orphaned_question_statistics_data
+     * @return void
+     */
+    public function test_upgrade_cleanup_orphaned_question_statistics_data(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+
+        $context = context_module::instance($qbank->cmid);
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $questioncategory = $questiongenerator->create_question_category(['contextid' => $context->id]);
+
+        $keptquestion = $questiongenerator->create_question(
+            'shortanswer',
+            null,
+            ['category' => $questioncategory->id]
+        );
+        $orphanedanalysisquestion = $questiongenerator->create_question(
+            'shortanswer',
+            null,
+            ['category' => $questioncategory->id]
+        );
+        $orphanedstatisticquestion = $questiongenerator->create_question(
+            'shortanswer',
+            null,
+            ['category' => $questioncategory->id]
+        );
+        $orphanedcountquestion = $questiongenerator->create_question(
+            'shortanswer',
+            null,
+            ['category' => $questioncategory->id]
+        );
+
+        $now = time();
+
+        // The following data should not be removed by the clean-up.
+        $keptanalysisid = $DB->insert_record(
+            'question_response_analysis',
+            (object) [
+                'hashcode' => sha1('kept-analysis'),
+                'whichtries' => question_attempt::LAST_TRY,
+                'timemodified' => $now,
+                'questionid' => $keptquestion->id,
+                'subqid' => 'kept-subq',
+                'credit' => 1,
+            ]
+        );
+
+        $DB->insert_record(
+            'question_response_count',
+            (object) [
+                'analysisid' => $keptanalysisid,
+                'try' => 1,
+                'rcount' => 2,
+            ],
+            false
+        );
+
+        $DB->insert_record(
+            'question_statistics',
+            (object) [
+                'hashcode' => sha1('kept-statistics'),
+                'timemodified' => $now,
+                'questionid' => $keptquestion->id,
+                'subquestion' => 1,
+                's' => 1,
+            ],
+            false
+        );
+
+        // The following data should be removed.
+        $orphanedanalysisid1 = $DB->insert_record(
+            'question_response_analysis',
+            (object) [
+                'hashcode' => sha1('orphaned-analysis-one'),
+                'whichtries' => question_attempt::LAST_TRY,
+                'timemodified' => $now,
+                'questionid' => $orphanedanalysisquestion->id,
+                'subqid' => 'orphaned-subq-one',
+                'credit' => 1,
+            ]
+        );
+
+        $orphanedanalysisid2 = $DB->insert_record(
+            'question_response_analysis',
+            (object) [
+                'hashcode' => sha1('orphaned-analysis-two'),
+                'whichtries' => question_attempt::ALL_TRIES,
+                'timemodified' => $now,
+                'questionid' => $orphanedanalysisquestion->id,
+                'subqid' => 'orphaned-subq-two',
+                'credit' => 0,
+            ]
+        );
+
+        $DB->insert_record(
+            'question_response_count',
+            (object) [
+                'analysisid' => $orphanedanalysisid1,
+                'try' => 1,
+                'rcount' => 3,
+            ],
+            false
+        );
+
+        $DB->insert_record(
+            'question_response_count',
+            (object) [
+                'analysisid' => $orphanedanalysisid2,
+                'try' => 2,
+                'rcount' => 4,
+            ],
+            false
+        );
+
+        $DB->insert_record(
+            'question_statistics',
+            (object) [
+                'hashcode' => sha1('orphaned-analysis-statistics'),
+                'timemodified' => $now,
+                'questionid' => $orphanedanalysisquestion->id,
+                'subquestion' => 1,
+                's' => 1,
+            ],
+            false
+        );
+
+        $DB->insert_record(
+            'question_statistics',
+            (object) [
+                'hashcode' => sha1('orphaned-statistics-only'),
+                'timemodified' => $now,
+                'questionid' => $orphanedstatisticquestion->id,
+                'subquestion' => 1,
+                's' => 1,
+            ],
+            false
+        );
+
+        $orphanedcountanalysisid = $DB->insert_record(
+            'question_response_analysis',
+            (object) [
+                'hashcode' => sha1('orphaned-count-analysis'),
+                'whichtries' => question_attempt::LAST_TRY,
+                'timemodified' => $now,
+                'questionid' => $orphanedcountquestion->id,
+                'subqid' => 'orphaned-count-subq',
+                'credit' => 1,
+            ]
+        );
+
+        $DB->insert_record(
+            'question_response_count',
+            (object) [
+                'analysisid' => $orphanedcountanalysisid,
+                'try' => 1,
+                'rcount' => 5,
+            ],
+            false
+        );
+
+        // Delete some parent references to simulate orphaned data.
+        // Parent references can be from either {question} or {question_response_analysis}.
+        $DB->delete_records('question', ['id' => $orphanedanalysisquestion->id]);
+        $DB->delete_records('question', ['id' => $orphanedstatisticquestion->id]);
+        $DB->delete_records('question_response_analysis', ['id' => $orphanedcountanalysisid]);
+
+        // Run the clean-up task.
+        (new \core\task\cleanup_orphaned_question_statistics_task())->execute();
+
+        // Assert valid data remains.
+        $this->assertTrue($DB->record_exists('question_response_analysis', ['id' => $keptanalysisid]));
+        $this->assertTrue($DB->record_exists('question_response_count', ['analysisid' => $keptanalysisid]));
+        $this->assertTrue($DB->record_exists('question_statistics', ['questionid' => $keptquestion->id]));
+
+        // Assert orphaned data is removed.
+        $this->assertFalse($DB->record_exists('question_response_analysis', ['id' => $orphanedanalysisid1]));
+        $this->assertFalse($DB->record_exists('question_response_analysis', ['id' => $orphanedanalysisid2]));
+        $this->assertFalse($DB->record_exists('question_response_count', ['analysisid' => $orphanedanalysisid1]));
+        $this->assertFalse($DB->record_exists('question_response_count', ['analysisid' => $orphanedanalysisid2]));
+        $this->assertFalse($DB->record_exists('question_statistics', ['questionid' => $orphanedanalysisquestion->id]));
+
+        // Assert orphaned data is removed.
+        $this->assertFalse($DB->record_exists('question_statistics', ['questionid' => $orphanedstatisticquestion->id]));
+        $this->assertFalse($DB->record_exists('question_response_count', ['analysisid' => $orphanedcountanalysisid]));
+    }
 }

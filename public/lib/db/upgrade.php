@@ -1899,5 +1899,10 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2026042002.03);
     }
 
+    if ($oldversion < 2026042004.04) {
+        \core\task\manager::queue_adhoc_task(new \core\task\cleanup_orphaned_question_statistics_task());
+        upgrade_main_savepoint(true, 2026042004.04);
+    }
+
     return true;
 }
