@@ -244,10 +244,35 @@ class calculated {
      * @param int $questionid The question id.
      * @return void
      */
-    public static function delete_cache(int $questionid): void {
+    public static function delete_cache_by_questionid(int $questionid): void {
+        self::delete_cache_for_identifier('questionid', $questionid);
+    }
+
+    /**
+     * Delete cached question statistics for a hash code.
+     *
+     * @param string $hashcode The hash code for the qubaid condition.
+     * @return void
+     */
+    public static function delete_cache_by_hashcode(string $hashcode): void {
+        self::delete_cache_for_identifier('hashcode', $hashcode);
+    }
+
+    /**
+     * Delete cached question statistics using either a question id or a hash code.
+     *
+     * @param string     $field The database field to match on.
+     * @param int|string $value The question id or hash code to match.
+     * @return void
+     */
+    private static function delete_cache_for_identifier(string $field, int|string $value): void {
         global $DB;
 
-        $DB->delete_records('question_statistics', ['questionid' => $questionid]);
+        if (!in_array($field, ['questionid', 'hashcode'], true)) {
+            throw new \coding_exception('Unsupported cache deletion field: ' . $field);
+        }
+
+        $DB->delete_records('question_statistics', [$field => $value]);
     }
 
     /**
