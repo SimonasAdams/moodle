@@ -40,7 +40,7 @@ require_once($CFG->dirroot . '/lib/questionlib.php');
  * @author     Simon Adams <simon.adams@catalyst-eu.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \question_delete_question
- * @covers     \core_question\statistics\responses\analysis_for_actual_response::delete_cache
+ * @covers     \core_question\statistics\responses\analysis_for_actual_response::delete_cache_by_questionid
  * @covers     \core_question\statistics\questions\calculated::delete_cache
  */
 final class delete_cache_test extends advanced_testcase {
