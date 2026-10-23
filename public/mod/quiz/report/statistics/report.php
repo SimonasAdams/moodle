@@ -25,7 +25,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_question\statistics\questions\calculated;
 use core_question\statistics\responses\analyser;
+use core_question\statistics\responses\analysis_for_actual_response;
 use mod_quiz\local\reports\report_base;
 use core_question\statistics\questions\all_calculated_for_qubaid_condition;
 use quiz_statistics\task\recalculate;
@@ -886,9 +888,11 @@ class quiz_statistics_report extends report_base {
      */
     public function clear_cached_data($qubaids) {
         global $DB;
+        $transaction = $DB->start_delegated_transaction();
         $DB->delete_records('quiz_statistics', ['hashcode' => $qubaids->get_hash_code()]);
-        $DB->delete_records('question_statistics', ['hashcode' => $qubaids->get_hash_code()]);
-        $DB->delete_records('question_response_analysis', ['hashcode' => $qubaids->get_hash_code()]);
+        calculated::delete_cache_by_hashcode($qubaids->get_hash_code());
+        analysis_for_actual_response::delete_cache_by_hashcode($qubaids->get_hash_code());
+        $transaction->allow_commit();
     }
 
     /**
