@@ -402,8 +402,8 @@ function question_delete_question($questionid): void {
     }
 
     // Delete question statistics and response analysis data for this question.
-    \core_question\statistics\responses\analysis_for_actual_response::delete_cache($question->id);
-    \core_question\statistics\questions\calculated::delete_cache($question->id);
+    \core_question\statistics\responses\analysis_for_actual_response::delete_cache_by_questionid($question->id);
+    \core_question\statistics\questions\calculated::delete_cache_by_questionid($question->id);
 
     // Finally delete the question record itself.
     $DB->delete_records('question', ['id' => $question->id]);
