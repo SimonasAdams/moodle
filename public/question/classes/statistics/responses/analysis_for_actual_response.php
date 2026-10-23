@@ -153,18 +153,43 @@ class analysis_for_actual_response {
      * @param int $questionid The question id.
      * @return void
      */
-    public static function delete_cache(int $questionid): void {
+    public static function delete_cache_by_questionid(int $questionid): void {
+        self::delete_cache_for_identifier('questionid', $questionid);
+    }
+
+    /**
+     * Delete cached response analysis for a hash code.
+     *
+     * @param string $hashcode The hash code for the qubaid condition.
+     * @return void
+     */
+    public static function delete_cache_by_hashcode(string $hashcode): void {
+        self::delete_cache_for_identifier('hashcode', $hashcode);
+    }
+
+    /**
+     * Delete cached response analysis using either a question id or a hash code.
+     *
+     * @param string     $field The database field to match on.
+     * @param int|string $value The question id or hash code to match.
+     * @return void
+     */
+    private static function delete_cache_for_identifier(string $field, int|string $value): void {
         global $DB;
+
+        if (!in_array($field, ['questionid', 'hashcode'], true)) {
+            throw new \coding_exception('Unsupported cache deletion field: ' . $field);
+        }
 
         $transaction = $DB->start_delegated_transaction();
 
-        $analysisids = $DB->get_fieldset('question_response_analysis', 'id', ['questionid' => $questionid]);
+        $analysisids = $DB->get_fieldset('question_response_analysis', 'id', [$field => $value]);
         if (!empty($analysisids)) {
             [$insql, $params] = $DB->get_in_or_equal($analysisids);
             $DB->delete_records_select('question_response_count', 'analysisid ' . $insql, $params);
         }
 
-        $DB->delete_records('question_response_analysis', ['questionid' => $questionid]);
+        $DB->delete_records('question_response_analysis', [$field => $value]);
 
         $transaction->allow_commit();
     }
