@@ -46,24 +46,18 @@ class data_mapper extends \core_question\local\bank\data_mapper_base {
     }
 
     #[\Override]
-    public function save_question_data(int $questionid, array $data): array {
-        $return = parent::save_question_data($questionid, $data);
-        try {
-            $customfieldhandler = question_handler::create();
-            $editablefields = $customfieldhandler->get_editable_fields($questionid);
-            $datacontrollers = api::get_instance_fields_data($editablefields, $questionid);
-            foreach ($datacontrollers as $datacontroller) {
-                $importdata = $data[$datacontroller->get_field()->get('shortname')] ?? null;
-                if ($importdata) {
-                    $datacontroller->set($datacontroller->datafield(), $importdata['value']);
-                    $datacontroller->set('valueformat', $importdata['valueformat']);
-                    $datacontroller->set('contextid', $customfieldhandler->get_instance_context($questionid)->id);
-                    $datacontroller->save();
-                }
+    public function save_question_data(int $questionid, array $data): void {
+        $customfieldhandler = question_handler::create();
+        $editablefields = $customfieldhandler->get_editable_fields($questionid);
+        $datacontrollers = api::get_instance_fields_data($editablefields, $questionid);
+        foreach ($datacontrollers as $datacontroller) {
+            $importdata = $data[$datacontroller->get_field()->get('shortname')] ?? null;
+            if ($importdata) {
+                $datacontroller->set($datacontroller->datafield(), $importdata['value']);
+                $datacontroller->set('valueformat', $importdata['valueformat']);
+                $datacontroller->set('contextid', $customfieldhandler->get_instance_context($questionid)->id);
+                $datacontroller->save();
             }
-        } catch (\Throwable $e) {
-            $return['error'] = $e->getMessage();
         }
-        return $return;
     }
 }
