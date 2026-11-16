@@ -661,21 +661,35 @@ final class qformat_xml_import_export_test extends advanced_testcase {
     }
 
     /**
+     * Data provider for test_export_plugin_data.
+     *
+     * @return array
+     */
+    public static function export_plugin_data_provider(): array {
+        return [
+            'selected questions' => [false],
+            'whole category' => [true],
+        ];
+    }
+
+    /**
      * Test that exporting a question with additional data defined by a plugin produces the expected XML.
      *
+     * @param bool $bycategory Export the whole category (as the export page does), rather than selected questions
+     *     (as the export to XML action does).
      * @return void
      * @covers \qformat_xml::writequestion
      */
-    public function test_export_plugin_data(): void {
+    #[\PHPUnit\Framework\Attributes\DataProvider('export_plugin_data_provider')]
+    public function test_export_plugin_data(bool $bycategory): void {
         global $SITE, $CFG;
         require_once($CFG->dirroot . '/question/type/truefalse/questiontype.php');
 
         $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $this->resetAfterTest();
         $this->setAdminUser();
-        // Note while this loads $qformat with all the 'right' data from the xml file,
-        // the call to setCategory, followed by exportprocess will actually only export data
-        // from the database (created by the generator).
+        // Note while this loads $qformat with the data from the xml file, exportprocess will only export
+        // the questions created below, either from the category or from the list passed to setQuestions.
         $qformat = $this->create_qformat('question_with_qbank_plugin_data.xml', $SITE);
         $qtype = new qtype_truefalse();
 
@@ -701,9 +715,11 @@ final class qformat_xml_import_export_test extends advanced_testcase {
             'customfield_richtext_editor' => ['text' => '<p>some rich text</p>', 'format' => FORMAT_HTML],
         ]);
 
-        question_bank::notify_question_edited($question->id);
-
-        $qformat->setQuestions([question_bank::load_question_data($question->id)]);
+        if ($bycategory) {
+            $qformat->setCategory($category);
+        } else {
+            $qformat->setQuestions([question_bank::load_question_data($question->id)]);
+        }
         $qformat->setCattofile(false);
         $qformat->setContexttofile(false);
 
