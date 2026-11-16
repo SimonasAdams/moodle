@@ -526,19 +526,18 @@ class qformat_default {
             }
 
             if (!empty($question->qbank)) {
-                foreach ($question->qbank as $plugin => $data) {
-                    if (!\core\plugininfo\qbank::is_plugin_enabled('qbank_' . $plugin)) {
-                        continue;
+                $pluginfeatures = \core_question\local\bank\helper::get_enabled_plugin_features();
+                try {
+                    foreach ($question->qbank as $pluginname => $data) {
+                        if (!isset($pluginfeatures[$pluginname])) {
+                            continue;
+                        }
+                        $pluginfeatures[$pluginname]->get_data_mapper()->save_question_data($question->id, $data);
                     }
-                    $pluginfeaturesclass = "\\qbank_{$plugin}\\plugin_feature";
-                    $datamapper = (new $pluginfeaturesclass())->get_data_mapper();
-                    $pluginresult = $datamapper->save_question_data($question->id, $data);
-                    if (!empty($pluginresult['error'])) {
-                        $result->error .= ' ' . $pluginresult['error'];
-                    }
-                    if (!empty($pluginresult['notice'])) {
-                        $result->notice .= ' ' . $pluginresult['notice'];
-                    }
+                } catch (\moodle_exception $e) {
+                    echo $OUTPUT->notification($e->getMessage());
+                    $DB->force_transaction_rollback();
+                    return false;
                 }
             }
 

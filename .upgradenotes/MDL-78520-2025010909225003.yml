@@ -6,7 +6,17 @@ notes:
         store additional question data to import and export that data
         via the Moodle XML format.
 
+        If `save_question_data()` cannot save the data, it should throw a
+        `moodle_exception`. The import of that question is then rolled back
+        and the exception message is shown to the user.
+
         Documentation can be found in the devdocs at
         API guides > Plugin types > Question bank plugins > Data mapper API,
         and an example can be found in qbank_customfields.
+      type: improved
+  core_question:
+    - message: |
+        The new `\core_question\local\bank\helper::get_enabled_plugin_features()`
+        method returns the `plugin_feature` object of every enabled qbank plugin,
+        indexed by plugin name without the `qbank_` prefix.
       type: improved

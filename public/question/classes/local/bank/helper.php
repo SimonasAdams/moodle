@@ -51,4 +51,21 @@ class helper {
             throw new \moodle_exception('The following plugin is either disabled or missing from disk: ' . $pluginname);
         }
     }
+
+    /**
+     * Get the plugin_feature object for every enabled qbank plugin that has one.
+     *
+     * @return plugin_features_base[] Indexed by plugin name without the qbank_ prefix, e.g. 'customfields'.
+     */
+    public static function get_enabled_plugin_features(): array {
+        $features = [];
+        $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
+        foreach ($plugins as $component => $classname) {
+            if (\core\plugininfo\qbank::is_plugin_enabled($component)) {
+                [, $pluginname] = explode('_', $component, 2);
+                $features[$pluginname] = new $classname();
+            }
+        }
+        return $features;
+    }
 }

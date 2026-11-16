@@ -47,10 +47,9 @@ class data_mapper_base {
      *
      * @param int $questionid The question we are importing data for
      * @param array $data Data to be imported as [$key => $value]. This will match the structure output by {@see get_question_data}.
-     * @return array ['error', 'notice']
+     * @throws \moodle_exception If the data could not be saved; the question import is rolled back.
      */
-    public function save_question_data(int $questionid, array $data): array {
-        return ['error' => '', 'notice' => ''];
+    public function save_question_data(int $questionid, array $data): void {
     }
 
 }
