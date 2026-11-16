@@ -926,6 +926,30 @@ class qformat_default {
     }
 
     /**
+     * Add the data stored by each enabled qbank plugin to the questions being exported.
+     *
+     * The data is stored in each question's qbank property as [$pluginname => [$item => [$key => $value]]],
+     * for only those plugins that have data for the question.
+     *
+     * @param \stdClass[] $questions The questions being exported. They are updated in place.
+     */
+    protected function load_qbank_plugin_data(array $questions): void {
+        if (empty($questions)) {
+            return;
+        }
+        $questionids = array_column($questions, 'id');
+        $plugindata = [];
+        foreach (\core_question\local\bank\helper::get_enabled_plugin_features() as $pluginname => $pluginfeature) {
+            $plugindata[$pluginname] = $pluginfeature->get_data_mapper()->get_question_data($questionids);
+        }
+        foreach ($questions as $question) {
+            $question->qbank = array_filter(
+                array_map(fn(array $data): array => $data[$question->id] ?? [], $plugindata)
+            );
+        }
+    }
+
+    /**
      * Perform the export.
      * For most types this should not need to be overrided.
      *
@@ -953,6 +977,7 @@ class qformat_default {
         } else {
             $questions = $this->questions;
         }
+        $this->load_qbank_plugin_data($questions);
 
         $count = 0;
 

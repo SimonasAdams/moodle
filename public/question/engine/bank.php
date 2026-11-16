@@ -31,7 +31,6 @@ use core\output\notification;
 use core_cache\application_cache;
 use core_cache\data_source_interface;
 use core_cache\definition;
-use core_question\local\bank\helper;
 use core_question\local\bank\question_version_status;
 use core_question\output\question_version_info;
 use qbank_previewquestion\question_preview_options;
@@ -679,13 +678,6 @@ class question_finder implements data_source_interface {
 
         $questiondata = $DB->get_record_sql($sql, ['id' => $questionid], MUST_EXIST);
         get_question_options($questiondata);
-        $questiondata->qbank = [];
-        foreach (helper::get_enabled_plugin_features() as $pluginname => $pluginfeature) {
-            $plugindata = $pluginfeature->get_data_mapper()->get_question_data([$questionid]);
-            if (!empty($plugindata[$questionid])) {
-                $questiondata->qbank[$pluginname] = $plugindata[$questionid];
-            }
-        }
         return $questiondata;
     }
 
@@ -711,21 +703,11 @@ class question_finder implements data_source_interface {
 
         $questiondata = $DB->get_records_sql($sql . $idcondition, $params);
 
-        // Load any plugin data that exists for the questions we are loading.
-        $plugindata = [];
-        foreach (helper::get_enabled_plugin_features() as $pluginname => $pluginfeature) {
-            $plugindata[$pluginname] = $pluginfeature->get_data_mapper()->get_question_data($questionids);
-        }
-
         foreach ($questionids as $id) {
             if (!array_key_exists($id, $questiondata)) {
                 throw new dml_missing_record_exception('question', '', ['id' => $id]);
             }
             get_question_options($questiondata[$id]);
-            // Store plugin data in the question's qbank property, just for those plugins that have data for this question.
-            // $plugindata is in the format $plugindata[$pluginname][$questionid][$item] = [$key => $value], so we end up with
-            // $questiondata[$id]->qbank[$pluginname] = [$item => [$key => $value]] for each datum.
-            $questiondata[$id]->qbank = array_filter(array_map(fn(array $data): array => $data[$id], $plugindata));
         }
         return $questiondata;
     }
