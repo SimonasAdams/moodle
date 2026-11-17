@@ -181,4 +181,20 @@ final class data_controller_test extends \advanced_testcase {
             $this->assertEquals('Field type invalid not found', $e->getMessage());
         }
     }
+
+    /**
+     * Test the default implementations of the methods used to export and import field values.
+     */
+    public function test_export_import_defaults(): void {
+        $this->resetAfterTest();
+
+        $category = $this->get_generator()->create_category();
+        $field = $this->get_generator()->create_field(['categoryid' => $category->get('id'), 'type' => 'text']);
+        $course = $this->getDataGenerator()->create_course();
+        $data = $this->get_generator()->add_instance_data($field, $course->id, 'abc');
+
+        $this->assertSame('abc', $data->prepare_export_value());
+        $this->assertSame([], $data->get_files());
+        $this->assertSame('abc', $data->prepare_import_value('abc', FORMAT_HTML, 5));
+    }
 }

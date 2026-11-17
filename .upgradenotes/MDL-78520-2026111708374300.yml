@@ -1,0 +1,18 @@
+issueNumber: MDL-78520
+notes:
+  core_customfield:
+    - message: |
+        New `\core_customfield\data_controller` methods allow a field's value
+        to be exported from one site and imported on another, along with any
+        embedded files:
+        `prepare_export_value()` returns the value in a portable form,
+        `get_files()` returns the files embedded in the value, and
+        `prepare_import_value()` converts an imported value (and a draft area
+        holding its files) into the form data accepted by
+        `instance_form_save()`, or returns null if the value is not valid for
+        the field. Field types whose stored value depends on the site's
+        configuration, that store embedded files, or whose form data is not a
+        single value should override them. `customfield_select` exports and
+        imports the option label rather than its position, and
+        `customfield_textarea` handles its embedded files.
+      type: improved

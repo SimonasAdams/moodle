@@ -118,4 +118,30 @@ class data_controller extends \core_customfield\data_controller {
 
         return null;
     }
+
+    /**
+     * Get the label of the selected option, so it can be matched to an option on another site.
+     *
+     * @return string The option label, or an empty string if no option is selected.
+     */
+    #[\Override]
+    public function prepare_export_value(): string {
+        return $this->get_field()->get_options()[$this->get_value()] ?? '';
+    }
+
+    /**
+     * Convert an imported option label into the position of the matching option.
+     *
+     * @param string $text The option label, or an empty string for no option.
+     * @param int $format Not used.
+     * @param int|null $draftitemid Not used.
+     * @return int|null The option position, or null if no option has this label.
+     */
+    #[\Override]
+    public function prepare_import_value(string $text, int $format, ?int $draftitemid = null) {
+        if ($text === '') {
+            return 0;
+        }
+        return $this->get_field()->parse_value($text) ?: null;
+    }
 }
