@@ -38,3 +38,5 @@ $string['customfieldsettings'] = 'Common question custom fields settings';
 $string['customfields:changelockedcustomfields'] = 'Change locked question custom fields';
 $string['customfields:configurecustomfields'] = 'Configure custom fields';
 $string['customfields:viewhiddencustomfields'] = 'View hidden question custom fields';
+$string['importfieldskipped'] = 'The value for the custom field "{$a}" was not imported, because the field does not exist on this site or you cannot edit it.';
+$string['importvalueinvalid'] = 'The value "{$a->value}" for the custom field "{$a->field}" was not imported, because it is not valid for that field on this site.';
