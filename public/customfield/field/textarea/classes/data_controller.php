@@ -197,6 +197,20 @@ class data_controller extends \core_customfield\data_controller {
         return $this->get_field()->get_configdata_property('defaultvalue');
     }
 
+    #[\Override]
+    public function get_files(): array {
+        if (!$this->get('id')) {
+            return [];
+        }
+        return get_file_storage()->get_area_files($this->get('contextid'), 'customfield_textarea', 'value',
+            $this->get('id'), 'filepath, filename', false);
+    }
+
+    #[\Override]
+    public function prepare_import_value(string $text, int $format, ?int $draftitemid = null) {
+        return ['text' => $text, 'format' => $format, 'itemid' => $draftitemid ?? 0];
+    }
+
     /**
      * Implement the backup callback for the custom field element.
      * This includes any embedded files in the custom field element.

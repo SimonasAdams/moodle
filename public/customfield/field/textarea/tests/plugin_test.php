@@ -360,4 +360,90 @@ final class plugin_test extends \advanced_testcase {
         $this->assertInstanceOf(context_course::class, $options['context']);
         $this->assertEquals($context->id, $options['context']->id);
     }
+
+    /**
+     * Create a file in the current user's draft area.
+     *
+     * @param string $filename The file name.
+     * @param string $content The file content.
+     * @return int The draft item id.
+     */
+    protected function create_draft_file(string $filename, string $content): int {
+        global $USER;
+        $itemid = file_get_unused_draft_itemid();
+        get_file_storage()->create_file_from_string([
+            'contextid' => context_user::instance($USER->id)->id,
+            'component' => 'user',
+            'filearea' => 'draft',
+            'itemid' => $itemid,
+            'filepath' => '/',
+            'filename' => $filename,
+        ], $content);
+        return $itemid;
+    }
+
+    /**
+     * Get the saved data for myfield1 in a course.
+     *
+     * @param int $courseid The course id.
+     * @return \core_customfield\data_controller
+     */
+    protected function get_myfield1_data(int $courseid): \core_customfield\data_controller {
+        $fieldid = $this->cfields[1]->get('id');
+        return \core_customfield\api::get_instance_fields_data([$fieldid => $this->cfields[1]], $courseid)[$fieldid];
+    }
+
+    /**
+     * Test getting the files embedded in a value.
+     */
+    public function test_get_files(): void {
+        $this->setAdminUser();
+        $courseid = $this->courses[3]->id;
+
+        // No data has been saved yet.
+        $this->assertSame([], $this->get_myfield1_data($courseid)->get_files());
+
+        $this->cfcat->get_handler()->instance_form_save((object) [
+            'id' => $courseid,
+            'customfield_myfield1_editor' => [
+                'text' => 'A file: @@PLUGINFILE@@/hello.txt',
+                'format' => FORMAT_HTML,
+                'itemid' => $this->create_draft_file('hello.txt', 'Hello'),
+            ],
+        ]);
+
+        $files = array_values($this->get_myfield1_data($courseid)->get_files());
+        $this->assertCount(1, $files);
+        $this->assertEquals('hello.txt', $files[0]->get_filename());
+        $this->assertEquals('Hello', $files[0]->get_content());
+    }
+
+    /**
+     * Test that an imported value, including embedded files, is saved through instance_form_save().
+     */
+    public function test_prepare_import_value(): void {
+        $this->setAdminUser();
+        $courseid = $this->courses[3]->id;
+        $controller = $this->get_myfield1_data($courseid);
+
+        $this->assertEquals(
+            ['text' => 'Plain', 'format' => FORMAT_PLAIN, 'itemid' => 0],
+            $controller->prepare_import_value('Plain', FORMAT_PLAIN),
+        );
+
+        $draftitemid = $this->create_draft_file('hello.txt', 'Hello');
+        $value = $controller->prepare_import_value('A file: @@PLUGINFILE@@/hello.txt', FORMAT_HTML, $draftitemid);
+        $this->cfcat->get_handler()->instance_form_save((object) [
+            'id' => $courseid,
+            $controller->get_form_element_name() => $value,
+        ]);
+
+        $data = $this->get_myfield1_data($courseid);
+        $this->assertEquals('A file: @@PLUGINFILE@@/hello.txt', $data->get('value'));
+        $this->assertEquals(FORMAT_HTML, $data->get('valueformat'));
+        $file = get_file_storage()->get_file(context_course::instance($courseid)->id, 'customfield_textarea', 'value',
+            $data->get('id'), '/', 'hello.txt');
+        $this->assertNotEmpty($file);
+        $this->assertEquals('Hello', $file->get_content());
+    }
 }

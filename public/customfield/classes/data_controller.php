@@ -378,6 +378,43 @@ abstract class data_controller {
     }
 
     /**
+     * Get the files embedded in this field's value, so they can be exported along with it.
+     *
+     * Field types that store embedded files should override this.
+     *
+     * @return \stored_file[]
+     */
+    public function get_files(): array {
+        return [];
+    }
+
+    /**
+     * Get the value in a form that can be imported on another site with prepare_import_value().
+     *
+     * Field types whose stored value depends on the site's configuration, such as an option's position, should override
+     * this.
+     *
+     * @return string
+     */
+    public function prepare_export_value(): string {
+        return (string) $this->get_value();
+    }
+
+    /**
+     * Convert an imported value into the form data accepted by instance_form_save().
+     *
+     * Field types whose form data is not a single value, or that store embedded files, should override this.
+     *
+     * @param string $text The imported value.
+     * @param int $format The FORMAT_* of the value.
+     * @param int|null $draftitemid A draft area containing files embedded in the value, if there are any.
+     * @return mixed The form data, or null if the value is not valid for this field.
+     */
+    public function prepare_import_value(string $text, int $format, ?int $draftitemid = null) {
+        return $text;
+    }
+
+    /**
      * Callback for backup, allowing custom fields to add additional data to the backup.
      * It is not an abstract method for backward compatibility reasons.
      *

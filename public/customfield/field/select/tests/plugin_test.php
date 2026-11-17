@@ -222,4 +222,24 @@ final class plugin_test extends \advanced_testcase {
     public function test_delete(): void {
         $this->cfcat->get_handler()->delete_all();
     }
+
+    /**
+     * Test that a value is exported as the selected option's label.
+     */
+    public function test_prepare_export_value(): void {
+        $this->assertSame('a', $this->cfdata[1]->prepare_export_value());
+
+        $unsaved = \core_customfield\data_controller::create(0, null, $this->cfields[1]);
+        $this->assertSame('', $unsaved->prepare_export_value());
+    }
+
+    /**
+     * Test that an imported option label is converted to the matching option's position.
+     */
+    public function test_prepare_import_value(): void {
+        $data = $this->cfdata[1];
+        $this->assertSame(2, $data->prepare_import_value('b', FORMAT_PLAIN));
+        $this->assertSame(0, $data->prepare_import_value('', FORMAT_PLAIN));
+        $this->assertNull($data->prepare_import_value('zzz', FORMAT_PLAIN));
+    }
 }
