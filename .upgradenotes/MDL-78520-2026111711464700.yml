@@ -1,0 +1,26 @@
+issueNumber: MDL-78520
+notes:
+  qbank:
+    - message: |
+        The new data mapper API has been added to allow plugins that
+        store additional question data to import and export that data
+        via the Moodle XML format.
+
+        A plugin's data for each question is a list of named nodes. A leaf
+        node holds formatted text (text, format and optional embedded files),
+        and a branch node holds child nodes. Names can repeat, so lists and
+        records can be represented. See `\core_question\local\bank\data_mapper_base`
+        for details.
+
+        If `save_question_data()` cannot save the data, it should throw a
+        `moodle_exception`. The import of that question is then rolled back
+        and the exception message is shown to the user.
+
+        An example can be found in qbank_customfields.
+      type: improved
+  core_question:
+    - message: |
+        The new `\core_question\local\bank\helper::get_enabled_plugin_features()`
+        method returns the `plugin_feature` object of every enabled qbank plugin,
+        indexed by plugin name without the `qbank_` prefix.
+      type: improved

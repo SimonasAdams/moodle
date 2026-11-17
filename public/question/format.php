@@ -413,6 +413,8 @@ class qformat_default {
         // count number of questions processed
         $count = 0;
 
+        $pluginfeatures = \core_question\local\bank\helper::get_enabled_plugin_features();
+
         foreach ($questions as $question) {   // Process and store each question
             $transaction = $DB->start_delegated_transaction();
 
@@ -511,8 +513,6 @@ class qformat_default {
             // Now to save all the answers and type-specific options
 
             $result = question_bank::get_qtype($question->qtype)->save_question_options($question);
-            $event = \core\event\question_created::create_from_question_instance($question, $this->importcontext);
-            $event->trigger();
 
             if (core_tag_tag::is_enabled('core_question', 'question')) {
                 // Course tags on question now deprecated so merge them into the question tags.
@@ -525,6 +525,21 @@ class qformat_default {
                 );
             }
 
+            if (!empty($question->qbank)) {
+                try {
+                    foreach ($question->qbank as $pluginname => $data) {
+                        if (!isset($pluginfeatures[$pluginname])) {
+                            continue;
+                        }
+                        $pluginfeatures[$pluginname]->get_data_mapper()->save_question_data($question->id, $data);
+                    }
+                } catch (\moodle_exception $e) {
+                    echo $OUTPUT->notification($e->getMessage());
+                    $DB->force_transaction_rollback();
+                    return false;
+                }
+            }
+
             if (!empty($result->error)) {
                 echo $OUTPUT->notification($result->error);
                 // Can't use $transaction->rollback(); since it requires an exception,
@@ -532,6 +547,10 @@ class qformat_default {
                 $DB->force_transaction_rollback();
                 return false;
             }
+
+            // Only trigger the event once the question and all its data have been saved successfully.
+            $event = \core\event\question_created::create_from_question_instance($question, $this->importcontext);
+            $event->trigger();
 
             $transaction->allow_commit();
 
@@ -910,6 +929,30 @@ class qformat_default {
     }
 
     /**
+     * Add the data stored by each enabled qbank plugin to the questions being exported.
+     *
+     * The data is stored in each question's qbank property as [$pluginname => [$item => [$key => $value]]],
+     * for only those plugins that have data for the question.
+     *
+     * @param \stdClass[] $questions The questions being exported. They are updated in place.
+     */
+    protected function load_qbank_plugin_data(array $questions): void {
+        if (empty($questions)) {
+            return;
+        }
+        $questionids = array_column($questions, 'id');
+        $plugindata = [];
+        foreach (\core_question\local\bank\helper::get_enabled_plugin_features() as $pluginname => $pluginfeature) {
+            $plugindata[$pluginname] = $pluginfeature->get_data_mapper()->get_question_data($questionids);
+        }
+        foreach ($questions as $question) {
+            $question->qbank = array_filter(
+                array_map(fn(array $data): array => $data[$question->id] ?? [], $plugindata)
+            );
+        }
+    }
+
+    /**
      * Perform the export.
      * For most types this should not need to be overrided.
      *
@@ -937,6 +980,7 @@ class qformat_default {
         } else {
             $questions = $this->questions;
         }
+        $this->load_qbank_plugin_data($questions);
 
         $count = 0;
 
