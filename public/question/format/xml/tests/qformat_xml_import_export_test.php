@@ -21,6 +21,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+
+use qbank_customfields\customfield\question_handler;
+
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
@@ -132,6 +135,23 @@ final class qformat_xml_import_export_test extends advanced_testcase {
     }
 
     /**
+     * Get a question by name, including the question category ID.
+     *
+     * @param string $qname The question name
+     * @return \stdClass The question record.
+     * @throws dml_exception If the question is not found.
+     */
+    protected function get_question(string $qname): \stdClass {
+        global $DB;
+        $sql = "SELECT q.*, qbe.questioncategoryid AS category
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE q.name = :name";
+        return $DB->get_record_sql($sql, ['name' => $qname], MUST_EXIST);
+    }
+
+    /**
      * Check a question exists in a category.
      * @param string $qname The name of the question
      * @param string $catname The name of the category
@@ -140,12 +160,7 @@ final class qformat_xml_import_export_test extends advanced_testcase {
     public function assert_question_in_category($qname, $catname) {
         global $DB;
 
-        $sql = "SELECT q.*, qbe.questioncategoryid AS category
-                  FROM {question} q
-                  JOIN {question_versions} qv ON qv.questionid = q.id
-                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                 WHERE q.name = :name";
-        $question = $DB->get_record_sql($sql, ['name' => $qname], MUST_EXIST);
+        $question = $this->get_question($qname);
         $category = $DB->get_record('question_categories', ['name' => $catname], '*', MUST_EXIST);
         $this->assertEquals($category->id, $question->category);
     }
@@ -545,4 +560,259 @@ final class qformat_xml_import_export_test extends advanced_testcase {
         // No question  have been imported.
         $this->assertCount(0, $questions);
     }
+
+    /**
+     * Create a file in the current user's draft area.
+     *
+     * @param string $filename The file name.
+     * @param string $content The file content.
+     * @return int The draft item id.
+     */
+    protected function create_draft_file(string $filename, string $content): int {
+        global $USER;
+        $itemid = file_get_unused_draft_itemid();
+        get_file_storage()->create_file_from_string([
+            'contextid' => context_user::instance($USER->id)->id,
+            'component' => 'user',
+            'filearea' => 'draft',
+            'itemid' => $itemid,
+            'filepath' => '/',
+            'filename' => $filename,
+        ], $content);
+        return $itemid;
+    }
+
+    /**
+     * Create a custom field category for qbank_customfields, with the custom fields used in question_with_qbank_plugin_data.xml.
+     *
+     * @return array
+     */
+    protected function create_custom_fields(): array {
+        $fieldcategory = (object)[
+            'component' => 'qbank_customfields',
+            'area' => 'question',
+        ];
+
+        $generator = $this->getDataGenerator();
+        $catid = $generator->create_custom_field_category($fieldcategory)->get('id');
+        return [
+            $generator->create_custom_field(['categoryid' => $catid, 'type' => 'checkbox', 'shortname' => 'yesno']),
+            $generator->create_custom_field(['categoryid' => $catid, 'type' => 'text', 'shortname' => 'something']),
+            $generator->create_custom_field(['categoryid' => $catid, 'type' => 'textarea', 'shortname' => 'richtext']),
+            $generator->create_custom_field(['categoryid' => $catid, 'type' => 'select', 'shortname' => 'colour',
+                'configdata' => ['options' => "Red\nGreen\nBlue"]]),
+        ];
+    }
+
+    /**
+     * Import the question with customfields plugin data defined in question_with_qbank_plugin_data.xml
+     *
+     * @return array[] The expected fields and data that were imported with the question.
+     */
+    protected function import_plugin_data(): array {
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $qcategory = $generator->get_plugin_generator('core_question')->create_question_category([
+            'contextid' => context_course::instance($course->id)->id,
+        ]);
+
+        [$customfield1, $customfield2, $customfield3, $customfield4] = $this->create_custom_fields();
+        $expectedfields = [
+            $customfield1->get('id') => $customfield1,
+            $customfield2->get('id') => $customfield2,
+            $customfield3->get('id') => $customfield3,
+            $customfield4->get('id') => $customfield4,
+        ];
+
+        $qformat = $this->create_qformat('question_with_qbank_plugin_data.xml', $course);
+        $expecteddata = [
+            $customfield1->get('shortname') => (object) ['value' => 1, 'format' => FORMAT_MOODLE],
+            $customfield2->get('shortname') => (object) ['value' => 'Foobar', 'format' => FORMAT_MOODLE],
+            $customfield3->get('shortname') => (object) [
+                'value' => '<p>some rich text <a href="@@PLUGINFILE@@/hello.txt">hello</a></p>',
+                'format' => FORMAT_HTML,
+            ],
+            // The file holds the option label, Green, which is the second option on this site.
+            $customfield4->get('shortname') => (object) ['value' => 2, 'format' => FORMAT_MOODLE],
+        ];
+
+        $qformat->setCategory($qcategory);
+        $imported = $qformat->importprocess();
+        $this->assertTrue($imported);
+        return [$expectedfields, $expecteddata];
+    }
+
+    /**
+     * Test that additional data for qbank plugins gets imported correctly.
+     *
+     * @return void
+     * @covers \qformat_xml::import_qbank_plugins
+     */
+    public function test_import_plugin_data(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$expectedfields, $expecteddata] = $this->import_plugin_data();
+
+        $question = $this->get_question('True/false question');
+        $customfieldhandler = question_handler::create();
+        foreach ($customfieldhandler->get_instance_data($question->id) as $datacontroller) {
+            $expectedfield = $expectedfields[$datacontroller->get_field()->get('id')];
+            $expected = $expecteddata[$expectedfield->get('shortname')];
+            $this->assertEquals($expected->value, $datacontroller->get_value());
+            $this->assertEquals($expected->format, $datacontroller->get('valueformat'));
+            if ($datacontroller->get_field()->get('shortname') === 'richtext') {
+                $files = array_values($datacontroller->get_files());
+                $this->assertCount(1, $files);
+                $this->assertEquals('hello.txt', $files[0]->get_filename());
+                $this->assertEquals('Hello', $files[0]->get_content());
+            }
+        }
+        question_handler::reset_caches();
+    }
+
+    /**
+     * Test importing custom field values onto a site whose custom fields do not match the ones in the file.
+     *
+     * @return void
+     */
+    public function test_import_plugin_data_mismatched_fields(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $qcategory = $generator->get_plugin_generator('core_question')->create_question_category([
+            'contextid' => context_course::instance($course->id)->id,
+        ]);
+
+        // This site only has two of the fields in the file, and its select field has no Green option.
+        $catid = $generator->create_custom_field_category((object) [
+            'component' => 'qbank_customfields',
+            'area' => 'question',
+        ])->get('id');
+        $generator->create_custom_field(['categoryid' => $catid, 'type' => 'checkbox', 'shortname' => 'yesno']);
+        $generator->create_custom_field(['categoryid' => $catid, 'type' => 'select', 'shortname' => 'colour',
+            'configdata' => ['options' => "Red\nBlue"]]);
+
+        $qformat = $this->create_qformat('question_with_qbank_plugin_data.xml', $course);
+        $qformat->setCategory($qcategory);
+        $this->assertTrue($qformat->importprocess());
+
+        // The matching field is imported.
+        $question = $this->get_question('True/false question');
+        $values = [];
+        foreach (question_handler::create()->get_instance_data($question->id) as $datacontroller) {
+            $values[$datacontroller->get_field()->get('shortname')] = $datacontroller->get_value();
+        }
+        $this->assertEquals(['yesno' => 1, 'colour' => 0], $values);
+
+        // The user is told about the values that were not imported.
+        $messages = array_map(fn($notification) => $notification->get_message(), \core\notification::fetch());
+        $this->assertContains(get_string('importfieldskipped', 'qbank_customfields', 'something'), $messages);
+        $this->assertContains(get_string('importfieldskipped', 'qbank_customfields', 'richtext'), $messages);
+        $this->assertContains(
+            get_string('importvalueinvalid', 'qbank_customfields', ['field' => 'colour', 'value' => 'Green']),
+            $messages,
+        );
+        question_handler::reset_caches();
+    }
+
+    /**
+     * Test that additional data for qbank plugins is ignored on import if the plugin is disabled.
+     *
+     * @return void
+     * @covers \qformat_xml::import_qbank_plugins
+     */
+    public function test_import_disabled_plugin_data(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $class = \core_plugin_manager::resolve_plugininfo_class('qbank');
+        $class::enable_plugin('customfields', false);
+
+        $this->import_plugin_data();
+
+        $question = $this->get_question('True/false question');
+        $customfieldhandler = question_handler::create();
+        foreach ($customfieldhandler->get_instance_data($question->id) as $datacontroller) {
+            // Custom fields should contain default empty values.
+            $this->assertEmpty($datacontroller->get_value());
+        }
+        question_handler::reset_caches();
+    }
+
+    /**
+     * Data provider for test_export_plugin_data.
+     *
+     * @return array
+     */
+    public static function export_plugin_data_provider(): array {
+        return [
+            'selected questions' => [false],
+            'whole category' => [true],
+        ];
+    }
+
+    /**
+     * Test that exporting a question with additional data defined by a plugin produces the expected XML.
+     *
+     * @param bool $bycategory Export the whole category (as the export page does), rather than selected questions
+     *     (as the export to XML action does).
+     * @return void
+     * @covers \qformat_xml::writequestion
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('export_plugin_data_provider')]
+    public function test_export_plugin_data(bool $bycategory): void {
+        global $SITE, $CFG;
+        require_once($CFG->dirroot . '/question/type/truefalse/questiontype.php');
+
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        // Note while this loads $qformat with the data from the xml file, exportprocess will only export
+        // the questions created below, either from the category or from the list passed to setQuestions.
+        $qformat = $this->create_qformat('question_with_qbank_plugin_data.xml', $SITE);
+        $qtype = new qtype_truefalse();
+
+        $syscontext = context_system::instance();
+        $category = $generator->create_question_category(['contextid' => $syscontext->id]);
+
+        $fromform = \test_question_maker::get_question_form_data('truefalse');
+        $fromform->category = $category->id . ',' . $syscontext->id;
+
+        $question = (object)[
+            'category' => $category->id,
+            'qtype' => 'truefalse',
+            'createdby' => 0,
+        ];
+
+        $question = $qtype->save_question($question, $fromform);
+        $this->create_custom_fields();
+        $customfieldhandler = question_handler::create();
+        $customfieldhandler->instance_form_save((object)[
+            'id' => $question->id,
+            'customfield_yesno' => 1,
+            'customfield_something' => 'Foobar',
+            'customfield_richtext_editor' => [
+                'text' => '<p>some rich text <a href="@@PLUGINFILE@@/hello.txt">hello</a></p>',
+                'format' => FORMAT_HTML,
+                'itemid' => $this->create_draft_file('hello.txt', 'Hello'),
+            ],
+            'customfield_colour' => 2,
+        ]);
+
+        if ($bycategory) {
+            $qformat->setCategory($category);
+        } else {
+            $qformat->setQuestions([question_bank::load_question_data($question->id)]);
+        }
+        $qformat->setCattofile(false);
+        $qformat->setContexttofile(false);
+
+        $expectedxml = file_get_contents(__DIR__ . '/fixtures/question_with_qbank_plugin_data.xml');
+        $this->assert_same_xml($expectedxml, $qformat->exportprocess());
+        question_handler::reset_caches();
+    }
+
 }

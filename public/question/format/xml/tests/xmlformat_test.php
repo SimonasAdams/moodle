@@ -365,6 +365,150 @@ END;
         $this->assert_same_xml($expectedxml, $xml);
     }
 
+    /**
+     * Test exporting qbank plugin data, including leaf and branch nodes and repeated names.
+     */
+    public function test_export_qbank_plugins(): void {
+        $qdata = new \stdClass();
+        $qdata->id = 123;
+        $qdata->contextid = \context_system::instance()->id;
+        $qdata->qtype = 'description';
+        $qdata->name = 'A description';
+        $qdata->questiontext = 'The question text.';
+        $qdata->questiontextformat = FORMAT_HTML;
+        $qdata->generalfeedback = '';
+        $qdata->generalfeedbackformat = FORMAT_HTML;
+        $qdata->defaultmark = 0;
+        $qdata->length = 0;
+        $qdata->penalty = 0;
+        $qdata->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+        $qdata->idnumber = null;
+        $qdata->qbank = [
+            'myplugin' => [
+                ['name' => 'flag', 'text' => '1'],
+                ['name' => 'note', 'text' => '<p>A note</p>', 'format' => FORMAT_HTML],
+                ['name' => 'record', 'children' => [
+                    ['name' => 'title', 'text' => 'First'],
+                    ['name' => 'idnumber', 'text' => 'r1'],
+                ]],
+                ['name' => 'record', 'children' => [
+                    ['name' => 'title', 'text' => 'Second'],
+                    ['name' => 'idnumber', 'text' => 'r2'],
+                ]],
+            ],
+        ];
+
+        $exporter = new qformat_xml();
+        $xml = $exporter->writequestion($qdata);
+
+        $expectedxml = '<!-- question: 123  -->
+  <question type="description">
+    <name>
+      <text>A description</text>
+    </name>
+    <questiontext format="html">
+      <text>The question text.</text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text></text>
+    </generalfeedback>
+    <defaultgrade>0</defaultgrade>
+    <penalty>0</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <qbank>
+      <myplugin>
+        <item name="flag" format="plain_text">
+          <text>1</text>
+        </item>
+        <item name="note" format="html">
+          <text><![CDATA[<p>A note</p>]]></text>
+        </item>
+        <item name="record">
+          <item name="title" format="plain_text">
+            <text>First</text>
+          </item>
+          <item name="idnumber" format="plain_text">
+            <text>r1</text>
+          </item>
+        </item>
+        <item name="record">
+          <item name="title" format="plain_text">
+            <text>Second</text>
+          </item>
+          <item name="idnumber" format="plain_text">
+            <text>r2</text>
+          </item>
+        </item>
+      </myplugin>
+    </qbank>
+  </question>
+';
+
+        $this->assert_same_xml($expectedxml, $xml);
+    }
+
+    /**
+     * Test importing qbank plugin data, including leaf and branch nodes, repeated names and embedded files.
+     */
+    public function test_import_qbank_plugins(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $xml = <<<END
+<question>
+    <qbank>
+        <myplugin>
+            <item name="flag" format="plain_text">
+                <text>1</text>
+            </item>
+            <item name="note" format="html">
+                <text><![CDATA[<p><img src="@@PLUGINFILE@@/a.txt"></p>]]></text>
+                <file name="a.txt" path="/" encoding="base64">SGVsbG8=</file>
+            </item>
+            <item name="record">
+                <item name="title" format="plain_text">
+                    <text>First</text>
+                </item>
+            </item>
+            <item name="record">
+                <item name="title" format="plain_text">
+                    <text>Second</text>
+                </item>
+            </item>
+        </myplugin>
+    </qbank>
+</question>
+END;
+
+        $questionxml = (new \core\xml_parser())->parse($xml);
+        $qo = new \stdClass();
+
+        $importer = new qformat_xml();
+        $importer->import_qbank_plugins($qo, $questionxml['question']);
+
+        // Only the leaf with a file gets a draft itemid, containing that file.
+        $nodes = $qo->qbank['myplugin'];
+        $this->assertArrayNotHasKey('itemid', $nodes[0]);
+        $this->assertArrayHasKey('itemid', $nodes[1]);
+        $files = file_get_drafarea_files($nodes[1]['itemid']);
+        $this->assertEquals(['a.txt'], array_column($files->list, 'filename'));
+        unset($qo->qbank['myplugin'][1]['itemid']);
+
+        $this->assertEquals([
+            'myplugin' => [
+                ['name' => 'flag', 'text' => '1', 'format' => FORMAT_PLAIN],
+                ['name' => 'note', 'text' => '<p><img src="@@PLUGINFILE@@/a.txt"></p>', 'format' => FORMAT_HTML],
+                ['name' => 'record', 'children' => [
+                    ['name' => 'title', 'text' => 'First', 'format' => FORMAT_PLAIN],
+                ]],
+                ['name' => 'record', 'children' => [
+                    ['name' => 'title', 'text' => 'Second', 'format' => FORMAT_PLAIN],
+                ]],
+            ],
+        ], $qo->qbank);
+    }
+
     public function test_import_essay_20(): void {
         $xml = '  <question type="essay">
     <name>

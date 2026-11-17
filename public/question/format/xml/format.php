@@ -279,6 +279,9 @@ class qformat_xml extends qformat_default {
         // Read the question tags.
         $this->import_question_tags($qo, $question);
 
+        // Read qbank plugin data.
+        $this->import_qbank_plugins($qo, $question);
+
         return $qo;
     }
 
@@ -424,6 +427,46 @@ class qformat_xml extends qformat_default {
     }
 
     /**
+     * Import data for question bank plugins
+     *
+     * Sets $qo->qbank to [$pluginname => array $nodes], with nodes as described in
+     * {@see \core_question\local\bank\data_mapper_base}.
+     *
+     * @param \stdClass $qo the question data that is being constructed.
+     * @param array $questionxml The xml representing the question.
+     * @return void
+     */
+    public function import_qbank_plugins(\stdClass $qo, array $questionxml): void {
+        $qo->qbank = [];
+        if (!array_key_exists('qbank', $questionxml['#'])) {
+            return;
+        }
+        foreach ($questionxml['#']['qbank'][0]['#'] as $plugin => $plugindata) {
+            $qo->qbank[$plugin] = $this->import_qbank_nodes($this->getpath($plugindata, [0, '#', 'item'], []));
+        }
+    }
+
+    /**
+     * Import a list of qbank plugin data nodes.
+     *
+     * @param array $itemsxml The xml for a list of <item> elements.
+     * @return array The list of nodes.
+     */
+    protected function import_qbank_nodes(array $itemsxml): array {
+        $nodes = [];
+        foreach ($itemsxml as $itemxml) {
+            $node = ['name' => $this->getpath($itemxml, ['@', 'name'], '', true)];
+            if (isset($itemxml['#']['item'])) {
+                $node['children'] = $this->import_qbank_nodes($itemxml['#']['item']);
+            } else {
+                $node += $this->import_text_with_files($itemxml, [], '', 'plain_text');
+            }
+            $nodes[] = $node;
+        }
+        return $nodes;
+    }
+
+    /**
      * Import files from a node in the XML.
      * @param array $xml an array of <file> nodes from the the parsed XML.
      * @return array of things representing files - in the form that save_question expects.
@@ -562,6 +605,7 @@ class qformat_xml extends qformat_default {
 
         $this->import_hints($qo, $question, true, false, $this->get_format($qo->questiontextformat));
         $this->import_question_tags($qo, $question);
+        $this->import_qbank_plugins($qo, $question);
 
         return $qo;
     }
@@ -1180,6 +1224,32 @@ class qformat_xml extends qformat_default {
     }
 
     /**
+     * Generate the XML for a list of qbank plugin data nodes.
+     *
+     * @param array $nodes The nodes, as described in {@see \core_question\local\bank\data_mapper_base}.
+     * @param int $indent The current indent level.
+     * @return string The XML.
+     */
+    protected function write_qbank_nodes(array $nodes, int $indent): string {
+        $pad = str_repeat('  ', $indent);
+        $xml = '';
+        foreach ($nodes as $node) {
+            $name = htmlspecialchars($node['name'], ENT_QUOTES | ENT_XML1);
+            if (isset($node['children'])) {
+                $xml .= "{$pad}<item name=\"{$name}\">\n";
+                $xml .= $this->write_qbank_nodes($node['children'], $indent + 1);
+            } else {
+                $format = $this->get_format($node['format'] ?? FORMAT_PLAIN);
+                $xml .= "{$pad}<item name=\"{$name}\" format=\"{$format}\">\n";
+                $xml .= $this->writetext($node['text'], $indent + 1);
+                $xml .= $this->write_files($node['files'] ?? []);
+            }
+            $xml .= "{$pad}</item>\n";
+        }
+        return $xml;
+    }
+
+    /**
      * Generte the XML to represent some files.
      * @param array of store array of stored_file objects.
      * @return string $string the XML.
@@ -1594,6 +1664,17 @@ class qformat_xml extends qformat_default {
                     $expout .= "    </tags>\n";
                 }
             }
+        }
+
+        // Add any additional data provided by qbank plugins.
+        if (!empty($question->qbank)) {
+            $expout .= "    <qbank>\n";
+            foreach ($question->qbank as $plugin => $nodes) {
+                $expout .= "      <{$plugin}>\n";
+                $expout .= $this->write_qbank_nodes($nodes, 4);
+                $expout .= "      </{$plugin}>\n";
+            }
+            $expout .= "    </qbank>\n";
         }
 
         // Close the question tag.
