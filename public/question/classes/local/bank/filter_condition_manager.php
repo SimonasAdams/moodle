@@ -61,23 +61,41 @@ class filter_condition_manager {
     }
 
     /**
-     * List of condition classes
+     * Get all available filter conditions from the enabled qbank plugins.
      *
-     * @return condition[] condition classes: [condition_key] = class
+     * The conditions are created without a question bank view, so they are suitable for building queries from a stored
+     * list of filters, but not for rendering the filter UI.
+     *
+     * @return condition[] condition instances: [key] = condition
      */
-    public static function get_condition_classes(): array {
-        $classes = [];
+    public static function get_conditions(): array {
+        $conditions = [];
         $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
         foreach ($plugins as $componentname => $plugin) {
             if (\core\plugininfo\qbank::is_plugin_enabled($componentname)) {
                 $pluginentrypointobject = new $plugin();
-                $conditions = $pluginentrypointobject->get_question_filters();
-                foreach ($conditions as $condition) {
-                    $classes[$condition->get_condition_key()] = $condition->get_condition_class();
+                foreach ($pluginentrypointobject->get_question_filters() as $condition) {
+                    $conditions[$condition->get_key()] = $condition;
                 }
             }
         }
-        return $classes;
+        return $conditions;
+    }
+
+    /**
+     * List of condition classes
+     *
+     * Conditions that provide a different key for each instance, such as custom field conditions, cannot be used through
+     * their class name, so static calls on the returned classes will not work for them.
+     *
+     * @deprecated since Moodle 6.0 MDL-84404
+     * @see self::get_conditions()
+     * @return string[] condition classes: [condition_key] = class
+     */
+    #[\core\attribute\deprecated('filter_condition_manager::get_conditions()', since: '6.0', mdl: 'MDL-84404')]
+    public static function get_condition_classes(): array {
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
+        return array_map(fn(condition $condition) => $condition->get_condition_class(), self::get_conditions());
     }
 
     /**
@@ -161,9 +179,7 @@ class filter_condition_manager {
      */
     public static function filter_invalid_values(array $filterconditions): array {
 
-        $classes = self::get_condition_classes();
-        foreach ($classes as $class) {
-            $condition = new $class();
+        foreach (self::get_conditions() as $condition) {
             $filterconditions = $condition->filter_invalid_values($filterconditions);
         }
 

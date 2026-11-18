@@ -63,7 +63,7 @@ abstract class condition {
     /**
      * Extract the required filter from the provided question bank view and set the initial values.
      *
-     * This will look for the filter matching {@see get_condition_key()} in the view's current filter parameter.
+     * This will look for the filter matching {@see get_key()} in the view's current filter parameter.
      * If the filter is not being initialised to display the question bank UI (for example, to resolve a list of questions matching
      * a set of filters), then the `$qbank` argument may be null, and any usage of it to set the initial filter state is skipped.
      *
@@ -74,9 +74,9 @@ abstract class condition {
         if (is_null($qbank)) {
             return;
         }
-        $this->filter = static::get_filter_from_list($qbank->get_pagevars('filter'));
+        $this->filter = $this->find_filter($qbank->get_pagevars('filter'));
         // Build where and params.
-        [$this->where, $this->params] = $this->filter ? static::build_query_from_filter($this->filter) : ['', []];
+        [$this->where, $this->params] = $this->filter ? $this->build_query($this->filter) : ['', []];
     }
 
     /**
@@ -150,6 +150,41 @@ abstract class condition {
      * @return string
      */
     abstract public static function get_condition_key();
+
+    /**
+     * Get the unique key identifying this condition instance in the list of filters.
+     *
+     * By default, this is the {@see get_condition_key()} of the class. A class that provides several conditions, for example
+     * one per custom field, must override this to return a different key for each instance, and must also override
+     * {@see find_filter()} and {@see build_query()}, since the static methods cannot tell the instances apart.
+     *
+     * @return string
+     */
+    public function get_key(): string {
+        return static::get_condition_key();
+    }
+
+    /**
+     * Given an array of filters, pick the entry that matches this condition instance and return it.
+     *
+     * @param array $filters Array of filters, keyed by condition.
+     * @return ?array The filter that matches this condition
+     */
+    public function find_filter(array $filters): ?array {
+        return static::get_filter_from_list($filters);
+    }
+
+    /**
+     * Return the SQL WHERE condition and parameters for this condition instance.
+     *
+     * See {@see build_query_from_filter()} for the format of the filter and the return value.
+     *
+     * @param array $filter filter properties
+     * @return array ['SQL where condition', ['param1' => 'value1', 'param2' => 'value2', ...]]
+     */
+    public function build_query(array $filter): array {
+        return static::build_query_from_filter($filter);
+    }
 
     /**
      * Return an SQL fragment to be ANDed into the WHERE clause to filter which questions are shown.

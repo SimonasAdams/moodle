@@ -1,0 +1,21 @@
+issueNumber: MDL-84404
+notes:
+  core_question:
+    - message: >-
+        Question bank filter conditions can now be created for each question
+        custom field. A custom field type plugin supports this by adding a class
+        named `\customfield_<type>\question\filter_condition` which extends the
+        new `\core_question\local\bank\customfield_condition` class and
+        implements `build_query()`, using `get_value_sql()` to get the field
+        value for each question. To support this,
+        `\core_question\local\bank\condition` has the new instance methods
+        `get_key()`, `find_filter()` and `build_query()`, which default to
+        calling the static `get_condition_key()`, `get_filter_from_list()` and
+        `build_query_from_filter()` methods. Code that works with a condition
+        instance should call the instance methods, as conditions which provide
+        one condition per custom field cannot be identified by their class. The
+        new `\core_question\local\bank\datetime_condition_trait` provides the
+        date and time filter used by
+        `\qbank_viewcreator\timemodified_condition`, for use by other
+        conditions.
+      type: improved
