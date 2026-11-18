@@ -19,6 +19,7 @@ namespace qbank_viewcreator;
 use core\exception\moodle_exception;
 use core\plugininfo\filter;
 use core_question\local\bank\condition;
+use core_question\local\bank\datetime_condition_trait;
 
 /**
  * Filter condition for date/time modified
@@ -29,20 +30,7 @@ use core_question\local\bank\condition;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class timemodified_condition extends condition {
-    /**
-     * @var string Search for times before the specified date.
-     */
-    const MODE_BEFORE = 'before';
-
-    /**
-     * @var string Search for times after the specified date.
-     */
-    const MODE_AFTER = 'after';
-
-    /**
-     * @var string Search for times between the specified dates.
-     */
-    const MODE_BETWEEN = 'between';
+    use datetime_condition_trait;
 
     #[\Override]
     public function get_title() {
@@ -50,26 +38,8 @@ class timemodified_condition extends condition {
     }
 
     #[\Override]
-    public static function get_condition_key() {
+    public function get_key(): string {
         return 'timemodified';
-    }
-
-    #[\Override]
-    public function get_filter_class() {
-        return 'core/datafilter/filtertypes/datetime';
-    }
-
-    /**
-     * Set a single valid jointype, so we don't display the jointype selector.
-     *
-     * We have a separate filter option to control how this condition is applied, Any/All/None doesn't apply here.
-     *
-     * @return array
-     */
-    public function get_join_list(): array {
-        return [
-            self::JOINTYPE_DEFAULT,
-        ];
     }
 
     /**
@@ -85,68 +55,23 @@ class timemodified_condition extends condition {
      * @return array
      * @throws moodle_exception If an invalid mode or range is provided.
      */
-    public static function build_query_from_filter(array $filter): array {
-        if (!isset($filter['filteroptions']['mode']) || empty($filter['values'])) {
+    public function build_query(array $filter): array {
+        $range = self::parse_datetime_filter($filter);
+        if (is_null($range)) {
             return ['', []];
         }
-        $mode = $filter['filteroptions']['mode'];
-        if (!in_array($mode, [self::MODE_AFTER, self::MODE_BEFORE, self::MODE_BETWEEN])) {
-            throw new moodle_exception('invaliddatetimemode', 'error', a: $filter['filteroptions']['mode']);
+        [$after, $before] = $range;
+        $conditions = [];
+        $params = [];
+        if (!is_null($after)) {
+            $conditions[] = 'q.timemodified > :timemodifiedafter';
+            $params['timemodifiedafter'] = $after;
         }
-        $tz = new \DateTimeZone(\core_date::get_user_timezone(99));
-        $datetimeafter = new \DateTime($filter['values'][0], $tz);
-        $datetimebefore = new \DateTime($filter['values'][1], $tz);
-        if ($mode === self::MODE_AFTER) {
-            $conditions = 'q.timemodified > :timemodifiedafter';
-            $params['timemodifiedafter'] = $datetimeafter->getTimestamp();
-        } else if ($mode === self::MODE_BEFORE) {
-            $conditions = 'q.timemodified < :timemodifiedbefore';
-            $params['timemodifiedbefore'] = $datetimebefore->getTimestamp();
-        } else {
-            if ($datetimeafter > $datetimebefore) {
-                throw new moodle_exception(
-                    'invaliddatetimebetween',
-                    'error',
-                    a: (object) [
-                        'before' => $datetimebefore->format('Y-m-d H:i'),
-                        'after' => $datetimeafter->format('Y-m-d H:i'),
-                    ],
-                );
-            }
-            $conditions = 'q.timemodified > :timemodifiedafter AND q.timemodified < :timemodifiedbefore';
-            $params = [
-                'timemodifiedafter' => $datetimeafter->getTimestamp(),
-                'timemodifiedbefore' => $datetimebefore->getTimestamp(),
-            ];
+        if (!is_null($before)) {
+            $conditions[] = 'q.timemodified < :timemodifiedbefore';
+            $params['timemodifiedbefore'] = $before;
         }
 
-        return [$conditions, $params];
-    }
-
-    /**
-     * Return the default datetime values for the filter.
-     *
-     * This generates values formatted for datetime-local fields. The first value returned is the current time,
-     * for use as the default "before" datetime. The second is midnight 1 week ago, for use as the default "after"
-     * datetime.
-     *
-     * @return array[]
-     */
-    public function get_initial_values(): array {
-        $tz = new \DateTimeZone(\core_date::get_user_timezone());
-        // Datetime format used by the <input type="datetime-local"> field.
-        $format = 'Y-m-d\TH:i';
-        $now = (new \DateTime('now', $tz))->format($format);
-        $oneweek = (new \DateTime('midnight 1 week ago', $tz))->format($format);
-        return [
-            [
-                'value' => $now,
-                'title' => $now,
-            ],
-            [
-                'value' => $oneweek,
-                'title' => $oneweek,
-            ],
-        ];
+        return [implode(' AND ', $conditions), $params];
     }
 }
