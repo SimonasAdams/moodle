@@ -1,0 +1,12 @@
+issueNumber: MDL-84404
+notes:
+  qbank_customfields:
+    - message: >-
+        Question custom fields can now be used as question bank filter
+        conditions, for field types which support it. To set question custom
+        field values in tests, the qbank_customfields data generator has a new
+        `create_question_custom_field_value()` method, and Behat tests can use
+        the new `qbank_customfields > question custom field values` generator,
+        with the columns `question` (the question name), `field` (the field
+        shortname) and `value`.
+      type: improved
