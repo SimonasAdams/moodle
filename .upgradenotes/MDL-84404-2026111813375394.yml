@@ -1,0 +1,11 @@
+issueNumber: MDL-84404
+notes:
+  core:
+    - message: >-
+        A new `core/datafilter/filtertypes/number` filter type has been added
+        for filtering on a numeric value. It shows a mode selector (equal to,
+        less than, greater than or between) and one or two number inputs. The
+        filter values are the raw input values (the second is only used for
+        "between"), and the selected mode is passed as the `mode` filter option,
+        with the values `equal`, `lessthan`, `greaterthan` or `between`.
+      type: improved
