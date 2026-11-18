@@ -63,7 +63,7 @@ abstract class condition {
     /**
      * Extract the required filter from the provided question bank view and set the initial values.
      *
-     * This will look for the filter matching {@see get_condition_key()} in the view's current filter parameter.
+     * This will look for the filter matching {@see get_key()} in the view's current filter parameter.
      * If the filter is not being initialised to display the question bank UI (for example, to resolve a list of questions matching
      * a set of filters), then the `$qbank` argument may be null, and any usage of it to set the initial filter state is skipped.
      *
@@ -74,9 +74,9 @@ abstract class condition {
         if (is_null($qbank)) {
             return;
         }
-        $this->filter = static::get_filter_from_list($qbank->get_pagevars('filter'));
+        $this->filter = $this->find_filter($qbank->get_pagevars('filter'));
         // Build where and params.
-        [$this->where, $this->params] = $this->filter ? static::build_query_from_filter($this->filter) : ['', []];
+        [$this->where, $this->params] = $this->filter ? $this->build_query($this->filter) : ['', []];
     }
 
     /**
@@ -144,12 +144,45 @@ abstract class condition {
 
     /**
      * Each condition will need a unique key to be identified and sequenced by the api.
+     *
+     * @deprecated since Moodle 6.0 MDL-84404
+     * @see self::get_key()
+     * @return string
+     */
+    #[\core\attribute\deprecated('condition::get_key()', since: '6.0', mdl: 'MDL-84404')]
+    public static function get_condition_key() {
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
+        return (new static())->get_key();
+    }
+
+    /**
+     * Get the key which identifies this condition, and which its filter is stored under.
+     *
+     * Each condition will need a unique key to be identified and sequenced by the api.
      * Use a unique string for the condition identifier, use string directly, dont need to use language pack.
      * Using language pack might break the filter object for multilingual support.
+     * When using one class to make many conditions, for example one per custom field, ensure each instance returns a
+     * unique value.
+     *
+     * Conditions must override this method. Conditions which still implement the deprecated static
+     * {@see get_condition_key()} are supported until its final deprecation.
      *
      * @return string
      */
-    abstract public static function get_condition_key();
+    public function get_key(): string {
+        // Deprecation bridge, to be removed in the final deprecation of get_condition_key().
+        // A subclass written before get_key() existed declares only the static get_condition_key(), so use that.
+        // Without the is_overridden() check this would call the base get_condition_key(), which calls get_key(),
+        // recursing forever for a class that implements neither.
+        if (self::is_overridden('get_condition_key')) {
+            debugging(
+                static::class . ' should implement get_key() instead of the deprecated get_condition_key().',
+                DEBUG_DEVELOPER,
+            );
+            return static::get_condition_key();
+        }
+        throw new \coding_exception(static::class . ' must implement get_key().');
+    }
 
     /**
      * Return an SQL fragment to be ANDed into the WHERE clause to filter which questions are shown.
@@ -225,11 +258,50 @@ abstract class condition {
     /**
      * Given an array of filters, pick the entry that matches the condition key and return it.
      *
+     * @deprecated since Moodle 6.0 MDL-84404
+     * @see self::find_filter()
      * @param array $filters Array of filters, keyed by condition.
      * @return ?array The filter that matches this condition
      */
+    #[\core\attribute\deprecated('condition::find_filter()', since: '6.0', mdl: 'MDL-84404')]
     public static function get_filter_from_list(array $filters): ?array {
-        return $filters[static::get_condition_key()] ?? null;
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
+        return (new static())->find_filter($filters);
+    }
+
+    /**
+     * Given an array of filters, pick the entry that matches this condition's key and return it.
+     *
+     * @param array $filters Array of filters, keyed by condition.
+     * @return ?array The filter that matches this condition
+     */
+    public function find_filter(array $filters): ?array {
+        // Deprecation bridge, to be removed in the final deprecation of get_filter_from_list().
+        // A subclass written before find_filter() existed may override the static get_filter_from_list() with its own
+        // lookup, so respect that. The base get_filter_from_list() calls find_filter(), so only call it when a subclass
+        // has overridden it, to avoid recursing forever.
+        if (self::is_overridden('get_filter_from_list')) {
+            debugging(
+                static::class . ' should implement find_filter() instead of the deprecated get_filter_from_list().',
+                DEBUG_DEVELOPER,
+            );
+            return static::get_filter_from_list($filters);
+        }
+        return $filters[$this->get_key()] ?? null;
+    }
+
+    /**
+     * Return the SQL WHERE condition and parameters to be ANDed with other filter conditions.
+     *
+     * @deprecated since Moodle 6.0 MDL-84404
+     * @see self::build_query()
+     * @param array $filter filter properties
+     * @return array ['SQL where condition', ['param1' => 'value1', 'param2' => 'value2', ...]]
+     */
+    #[\core\attribute\deprecated('condition::build_query()', since: '6.0', mdl: 'MDL-84404')]
+    public static function build_query_from_filter(array $filter): array {
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
+        return (new static())->build_query($filter);
     }
 
     /**
@@ -238,10 +310,49 @@ abstract class condition {
      * The $filter parameter recieves an array with a 'values' key, containing an array of the filter values selected,
      * and a 'jointype' key containing the selected join type.
      *
+     * Conditions must override this method. Conditions which still implement the deprecated static
+     * {@see build_query_from_filter()} are supported until its final deprecation.
+     *
      * @param array $filter filter properties
      * @return array ['SQL where condition', ['param1' => 'value1', 'param2' => 'value2', ...]]
      */
-    abstract public static function build_query_from_filter(array $filter): array;
+    public function build_query(array $filter): array {
+        // Deprecation bridge, to be removed in the final deprecation of build_query_from_filter().
+        // A subclass written before build_query() existed declares only the static build_query_from_filter(), so use that.
+        // Without the is_overridden() check this would call the base build_query_from_filter(), which calls build_query(),
+        // recursing forever for a class that implements neither.
+        if (self::is_overridden('build_query_from_filter')) {
+            debugging(
+                static::class . ' should implement build_query() instead of the deprecated build_query_from_filter().',
+                DEBUG_DEVELOPER,
+            );
+            return static::build_query_from_filter($filter);
+        }
+        throw new \coding_exception(static::class . ' must implement build_query().');
+    }
+
+    /**
+     * Whether the subclass declares its own version of a method, rather than inheriting this class's.
+     *
+     * This supports the deprecation of the static get_condition_key(), get_filter_from_list() and
+     * build_query_from_filter() in favour of the instance methods get_key(), find_filter() and build_query().
+     * During the deprecation, two kinds of existing code must keep working:
+     * - subclasses which only implement the static methods, so the instance methods fall back to them;
+     * - code which calls the static methods on converted subclasses, so the static methods call the instance methods.
+     *
+     * Each base method calls its counterpart, so checking whether the subclass overrides the static method tells the
+     * instance method which way to go, and stops a class which implements neither from recursing forever.
+     * method_exists() cannot do this, as the methods always exist on this class, and the deprecated attribute cannot,
+     * as attributes are not inherited by overriding methods.
+     *
+     * Remove this method with the bridges that use it, in the final deprecation of the static methods.
+     *
+     * @param string $method The method name.
+     * @return bool True if a subclass declares the method.
+     */
+    private static function is_overridden(string $method): bool {
+        return (new \ReflectionMethod(static::class, $method))->getDeclaringClass()->getName() !== self::class;
+    }
 
     /**
      * Convert and map values in the restored filtercondition to corresponding values on the current site/course.

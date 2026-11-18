@@ -131,13 +131,13 @@ class random_question_loader {
         // Build filter conditions.
         $params = [];
         $filterconditions = [];
-        foreach (filter_condition_manager::get_condition_classes() as $conditionclass) {
-            $filter = $conditionclass::get_filter_from_list($filters);
+        foreach (filter_condition_manager::get_conditions() as $condition) {
+            $filter = $condition->find_filter($filters);
             if (is_null($filter)) {
                 continue;
             }
 
-            [$filterwhere, $filterparams] = $conditionclass::build_query_from_filter($filter);
+            [$filterwhere, $filterparams] = $condition->build_query($filter);
             if (!empty($filterwhere)) {
                 $filterconditions[] = '(' . $filterwhere . ')';
             }

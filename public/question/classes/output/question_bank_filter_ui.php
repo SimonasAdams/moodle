@@ -91,7 +91,7 @@ class question_bank_filter_ui extends datafilter {
 
         foreach ($this->searchconditions as $searchcondition) {
             $filtertypes[] = $this->get_filter_object(
-                $searchcondition->get_condition_key(),
+                $searchcondition->get_key(),
                 $searchcondition->get_title(),
                 $searchcondition->allow_custom(),
                 $searchcondition->allow_multiple(),
