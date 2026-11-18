@@ -297,7 +297,7 @@ class custom_view extends \core_question\local\bank\view {
                 }
                 $pluginobjects = $pluginentrypointobject->get_question_filters($this);
                 foreach ($pluginobjects as $pluginobject) {
-                    $this->add_searchcondition($pluginobject, $pluginobject->get_condition_key());
+                    $this->add_searchcondition($pluginobject, $pluginobject->get_key());
                 }
             }
         }
