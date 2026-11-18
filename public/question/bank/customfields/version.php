@@ -26,6 +26,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qbank_customfields';
-$plugin->version   = 2026100500;
+$plugin->version   = 2026111800;
 $plugin->requires  = 2026100200;
 $plugin->maturity  = MATURITY_STABLE;
