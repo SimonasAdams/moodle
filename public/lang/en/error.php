@@ -382,6 +382,7 @@ $string['invalidmodule'] = 'Invalid module';
 $string['invalidmoduleid'] = 'Invalid module ID: {$a}';
 $string['invalidmodulename'] = 'Invalid module name: {$a}';
 $string['invalidnum'] = 'Invalid numeric value';
+$string['invalidnumberbetween'] = '{$a->min} must not be greater than {$a->max}.';
 $string['invalidnumkey'] = 'The array $conditions may not contain numeric keys. Please fix the code!';
 $string['invalidoutcome'] = 'Incorrect outcome ID';
 $string['invalidpagesize'] = 'Invalid page size';
