@@ -34,7 +34,7 @@ class createdby_condition extends user_condition {
     }
 
     #[\Override]
-    public static function get_condition_key() {
+    public function get_key(): string {
         return 'createdby';
     }
 

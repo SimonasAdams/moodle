@@ -42,7 +42,7 @@ abstract class user_condition extends condition {
     }
 
     #[\Override]
-    public static function build_query_from_filter(array $filter): array {
+    public function build_query(array $filter): array {
         global $DB;
 
         $conditions = [];
@@ -51,7 +51,7 @@ abstract class user_condition extends condition {
         $tablealias = static::get_table_alias();
         $allnames = array_map(fn($field) => "{$tablealias}.{$field}", \core_user\fields::get_name_fields());
         $allnames = $DB->sql_concat(...$allnames);
-        $conditionkey = static::get_condition_key();
+        $conditionkey = $this->get_key();
         foreach ($filter['values'] as $key => $value) {
             $params["{$conditionkey}{$key}"] = "%$value%";
             $conditions[] = $DB->sql_like($allnames, ":{$conditionkey}{$key}", casesensitive: false, notlike: $notlike);
