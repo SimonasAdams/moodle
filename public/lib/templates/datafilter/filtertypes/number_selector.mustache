@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core/datafilter/filtertypes/number_selector
+
+    Inputs for one or two numeric values.
+
+    The second input, and the text between the inputs, are only shown when comparing between two values.
+    This is controlled by the core/datafilter/filtertypes/number module, which also switches the label of the first input
+    between valuelabel and fromlabel.
+
+    Context variables required for this template:
+    * filtertype - The filter type name, used for the input names and dataset filterfield.
+    * required - Whether this filter is required.
+    * valuelabel - The label for the first input when comparing with a single value.
+    * fromlabel - The label for the first input when comparing between two values.
+    * tolabel - The label for the second input.
+    * value1 - The initial value for the first input.
+    * value2 - The initial value for the second input.
+
+    Example context (json):
+    {
+        "filtertype": "customfield_difficulty",
+        "required": false,
+        "valuelabel": "Difficulty value",
+        "fromlabel": "Difficulty from",
+        "tolabel": "Difficulty to",
+        "value1": "1",
+        "value2": "5"
+    }
+}}
+<div class="d-flex flex-column flex-md-row align-items-md-center" data-required="{{required}}">
+    <span data-region="number-value1">
+        <label for="core-filter_row-{{filtertype}}-value1-{{uniqid}}" class="visually-hidden"
+            data-label-single="{{valuelabel}}" data-label-between="{{fromlabel}}">{{valuelabel}}</label>
+        <input
+            id="core-filter_row-{{filtertype}}-value1-{{uniqid}}"
+            type="number"
+            step="any"
+            class="form-control"
+            name="{{filtertype}}[0]"
+            value="{{value1}}"
+            data-filterfield="{{filtertype}}1"
+            required
+        >
+    </span>
+    <span class="ms-2 me-2 d-none" data-region="number-betweenonly">
+        {{#str}} operator_and {{/str}}
+    </span>
+    <span class="d-none" data-region="number-betweenonly">
+        <span data-region="number-value2">
+            <label for="core-filter_row-{{filtertype}}-value2-{{uniqid}}" class="visually-hidden">{{tolabel}}</label>
+            <input
+                id="core-filter_row-{{filtertype}}-value2-{{uniqid}}"
+                type="number"
+                step="any"
+                class="form-control"
+                name="{{filtertype}}[1]"
+                value="{{value2}}"
+                data-filterfield="{{filtertype}}2"
+            >
+        </span>
+    </span>
+</div>
