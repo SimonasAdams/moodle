@@ -1,0 +1,20 @@
+issueNumber: MDL-84404
+notes:
+  core_question:
+    - message: >-
+        The static methods of `\core_question\local\bank\condition` have been
+        deprecated in favour of instance methods, so that one condition class
+        can provide several conditions, such as one per custom field.
+        Conditions should implement `get_key()` instead of
+        `get_condition_key()`, and `build_query()` instead of
+        `build_query_from_filter()`. Code that looks up a condition's filter
+        should call `find_filter()` instead of `get_filter_from_list()`.
+        Conditions which still implement the static methods continue to work,
+        with a debugging message, until their final deprecation.
+      type: deprecated
+    - message: >-
+        `\core_question\local\bank\filter_condition_manager::get_condition_classes()`
+        has been deprecated, because conditions are now identified by
+        instance. Use `filter_condition_manager::get_conditions()`, which
+        returns an instance of each condition keyed by `get_key()`.
+      type: deprecated

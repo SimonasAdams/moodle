@@ -63,21 +63,40 @@ class filter_condition_manager {
     /**
      * List of condition classes
      *
-     * @return condition[] condition classes: [condition_key] = class
+     * A class which provides several conditions, such as a custom field condition, is listed under the key of each one.
+     * The deprecated static methods of the classes cannot be used for such conditions.
+     *
+     * @deprecated since Moodle 6.0 MDL-84404
+     * @see self::get_conditions()
+     * @return string[] condition classes: [condition key] = class
      */
+    #[\core\attribute\deprecated('filter_condition_manager::get_conditions()', since: '6.0', mdl: 'MDL-84404')]
     public static function get_condition_classes(): array {
-        $classes = [];
+        \core\deprecation::emit_deprecation_if_present([self::class, __FUNCTION__]);
+        return array_map(fn(condition $condition) => $condition->get_condition_class(), self::get_conditions());
+    }
+
+    /**
+     * Get all available filter conditions from the enabled qbank plugins.
+     *
+     * The conditions are created without a question bank view, so they are suitable for building queries from a stored
+     * list of filters with {@see condition::find_filter()} and {@see condition::build_query()}, but not for rendering the
+     * filter UI.
+     *
+     * @return condition[] conditions: [condition key] = condition
+     */
+    public static function get_conditions(): array {
+        $conditions = [];
         $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
         foreach ($plugins as $componentname => $plugin) {
             if (\core\plugininfo\qbank::is_plugin_enabled($componentname)) {
                 $pluginentrypointobject = new $plugin();
-                $conditions = $pluginentrypointobject->get_question_filters();
-                foreach ($conditions as $condition) {
-                    $classes[$condition->get_condition_key()] = $condition->get_condition_class();
+                foreach ($pluginentrypointobject->get_question_filters() as $condition) {
+                    $conditions[$condition->get_key()] = $condition;
                 }
             }
         }
-        return $classes;
+        return $conditions;
     }
 
     /**
@@ -161,9 +180,7 @@ class filter_condition_manager {
      */
     public static function filter_invalid_values(array $filterconditions): array {
 
-        $classes = self::get_condition_classes();
-        foreach ($classes as $class) {
-            $condition = new $class();
+        foreach (self::get_conditions() as $condition) {
             $filterconditions = $condition->filter_invalid_values($filterconditions);
         }
 

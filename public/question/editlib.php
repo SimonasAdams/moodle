@@ -233,7 +233,7 @@ function question_build_edit_resources($edittab, $baseurl, $params,
                     $filtervalue['name'] = $filterkey;
                 }
                 $cleanfilter = [
-                    'name' => clean_param($filtervalue['name'], PARAM_ALPHANUM),
+                    'name' => clean_param($filtervalue['name'], PARAM_ALPHANUMEXT),
                     'jointype' => clean_param($filtervalue['jointype'], PARAM_INT),
                     'values' => $filtervalue['values'],
                     'filteroptions' => $filtervalue['filteroptions'] ?? [],
