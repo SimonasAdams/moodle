@@ -30,7 +30,7 @@ use core_question\local\bank\condition;
  */
 class type_condition extends condition {
     #[\Override]
-    public static function get_condition_key() {
+    public function get_key(): string {
         return 'qtype';
     }
 
@@ -90,7 +90,7 @@ class type_condition extends condition {
      * @throws \coding_exception
      * @throws \dml_exception
      */
-    public static function build_query_from_filter(array $filter): array {
+    public function build_query(array $filter): array {
         global $DB;
 
         // Remove empty string.

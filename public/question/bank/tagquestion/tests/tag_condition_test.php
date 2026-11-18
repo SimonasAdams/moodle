@@ -33,8 +33,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversClass(\qbank_tagquestion\tag_condition::class)]
-#[CoversMethod(\qbank_tagquestion\tag_condition::class, 'build_query_from_filter')]
-#[CoversMethod(\qbank_tagquestion\tag_condition::class, 'get_condition_key')]
+#[CoversMethod(\qbank_tagquestion\tag_condition::class, 'build_query')]
+#[CoversMethod(\qbank_tagquestion\tag_condition::class, 'get_key')]
 final class tag_condition_test extends \advanced_testcase {
     use mock_restore_test_trait;
 
@@ -159,7 +159,7 @@ final class tag_condition_test extends \advanced_testcase {
     private function get_questions_from_filter(array $filter, int $categoryid): array {
         global $DB;
 
-        [$where, $params] = tag_condition::build_query_from_filter($filter);
+        [$where, $params] = (new tag_condition())->build_query($filter);
 
         $sql = "SELECT q.id
                 FROM {question} q
@@ -307,10 +307,10 @@ final class tag_condition_test extends \advanced_testcase {
     }
 
     /**
-     * Test get_condition_key returns expected value.
+     * Test get_key returns expected value.
      */
-    public function test_get_condition_key(): void {
-        $this->assertSame('qtagids', tag_condition::get_condition_key());
+    public function test_get_key(): void {
+        $this->assertSame('qtagids', (new tag_condition())->get_key());
     }
 
     /**
@@ -349,7 +349,7 @@ final class tag_condition_test extends \advanced_testcase {
             'jointype' => datafilter::JOINTYPE_ALL,
         ];
 
-        [$where, $params] = tag_condition::build_query_from_filter($filter);
+        [$where, $params] = (new tag_condition())->build_query($filter);
 
         $this->assertSame('', $where);
         $this->assertSame([], $params);
