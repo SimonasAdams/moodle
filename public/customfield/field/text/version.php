@@ -25,5 +25,5 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'customfield_text';
-$plugin->version   = 2026100500;
+$plugin->version   = 2026111800;
 $plugin->requires  = 2026100200;
