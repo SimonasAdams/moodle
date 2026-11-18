@@ -16,6 +16,7 @@
 
 namespace qbank_customfields;
 
+use core_question\local\bank\customfield_condition;
 use core_question\local\bank\plugin_features_base;
 use core_question\local\bank\view;
 use qbank_customfields\customfield\question_handler;
@@ -56,5 +57,35 @@ class plugin_feature extends plugin_features_base {
         }
 
         return $columns;
+    }
+
+    /**
+     * Return a filter condition for each question custom field whose type supports filtering.
+     *
+     * When filters are displayed in a question bank view, only fields the user can see in that context are included.
+     * Without a view, for example when selecting random questions with saved filters, all fields are included.
+     *
+     * @param view|null $qbank The question bank view the filters are being rendered for, if any.
+     * @return customfield_condition[]
+     */
+    #[\Override]
+    public function get_question_filters(?view $qbank = null): array {
+        $handler = question_handler::create();
+        $context = $qbank?->get_most_specific_context();
+        $conditions = [];
+        foreach ($handler->get_fields() as $field) {
+            // Shared fields have no visibility setting for questions.
+            if (!$field->get_handler() instanceof question_handler) {
+                continue;
+            }
+            if ($context && !$handler->can_view_type($field, $context)) {
+                continue;
+            }
+            $condition = customfield_condition::create($field, $qbank);
+            if ($condition) {
+                $conditions[] = $condition;
+            }
+        }
+        return $conditions;
     }
 }
