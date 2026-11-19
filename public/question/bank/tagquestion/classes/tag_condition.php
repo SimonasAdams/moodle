@@ -56,7 +56,8 @@ class tag_condition extends condition {
         $this->selectedtagids = $this->filter->values ?? [];
     }
 
-    public static function get_condition_key() {
+    #[\Override]
+    public function get_key(): string {
         return 'qtagids';
     }
 
@@ -87,7 +88,7 @@ class tag_condition extends condition {
      * @param array $filter filter properties
      * @return array where sql and params
      */
-    public static function build_query_from_filter(array $filter): array {
+    public function build_query(array $filter): array {
         global $DB;
 
         // Remove empty string.
