@@ -99,7 +99,8 @@ class category_condition extends condition {
         return $this->category;
     }
 
-    public static function get_condition_key() {
+    #[\Override]
+    public function get_key(): string {
         return 'category';
     }
 
@@ -142,7 +143,8 @@ class category_condition extends condition {
                 MUST_EXIST);
     }
 
-    public static function build_query_from_filter(array $filter): array {
+    #[\Override]
+    public function build_query(array $filter): array {
         global $DB;
         $recursive = false;
         if (isset($filter['filteroptions']['includesubcategories'])) {
