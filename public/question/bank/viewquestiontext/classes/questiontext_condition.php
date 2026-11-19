@@ -35,7 +35,7 @@ class questiontext_condition extends condition {
     }
 
     #[\Override]
-    public static function get_condition_key(): string {
+    public function get_key(): string {
         return 'questiontext';
     }
 
@@ -45,7 +45,7 @@ class questiontext_condition extends condition {
     }
 
     #[\Override]
-    public static function build_query_from_filter(array $filter): array {
+    public function build_query(array $filter): array {
 
         global $DB;
 
