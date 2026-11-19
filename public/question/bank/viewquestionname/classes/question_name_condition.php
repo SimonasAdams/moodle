@@ -33,7 +33,7 @@ class question_name_condition extends \core_question\local\bank\condition {
     }
 
     #[\Override]
-    public static function get_condition_key() {
+    public function get_key(): string {
         return 'questionname';
     }
 
@@ -50,7 +50,7 @@ class question_name_condition extends \core_question\local\bank\condition {
      * @param array $filter
      * @return array
      */
-    public static function build_query_from_filter(array $filter): array {
+    public function build_query(array $filter): array {
         global $DB;
 
         $conditions = [];
