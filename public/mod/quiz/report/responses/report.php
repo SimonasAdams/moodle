@@ -143,6 +143,14 @@ class quiz_responses_report extends attempts_report {
             $this->add_grade_columns($quiz, $options->usercanseegrades, $columns, $headers);
 
             foreach ($questions as $id => $question) {
+                if ($options->showqname) {
+                    $columns[] = 'qname' . $id;
+                    $headers[] = get_string('questionnamex', 'quiz_responses', $question->displaynumber);
+                }
+                if ($options->showqversion) {
+                    $columns[] = 'qversion' . $id;
+                    $headers[] = get_string('questionversionx', 'quiz_responses', $question->displaynumber);
+                }
                 if ($options->showqtext) {
                     $columns[] = 'question' . $id;
                     $headers[] = get_string('questionx', 'question', $question->displaynumber);
@@ -150,6 +158,10 @@ class quiz_responses_report extends attempts_report {
                 if ($options->showresponses) {
                     $columns[] = 'response' . $id;
                     $headers[] = get_string('responsex', 'quiz_responses', $question->displaynumber);
+                }
+                if ($options->showcorrectness) {
+                    $columns[] = 'correctness' . $id;
+                    $headers[] = get_string('correctnessx', 'quiz_responses', $question->displaynumber);
                 }
                 if ($options->showright) {
                     $columns[] = 'right' . $id;

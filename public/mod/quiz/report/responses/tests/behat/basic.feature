@@ -78,6 +78,29 @@ Feature: Basic use of the Responses report
     And "Student Two" row "Response 1a" column of "responses" table should contain "-"
 
   @javascript
+  Scenario: A teacher can show the question name, question version and correctness of responses
+    Given user "student1" has started an attempt at quiz "Quiz 1"
+    And user "student1" has checked answers in their attempt at quiz "Quiz 1":
+      | slot | response |
+      | 1    | 3.14     |
+    And user "student1" has finished an attempt at quiz "Quiz 1"
+    And I am on the "Quiz 1" "mod_quiz > Responses report" page logged in as teacher
+    And I should not see "Question name 1a"
+    When I set the following fields to these values:
+      | question name    | 1 |
+      | question version | 1 |
+      | correctness      | 1 |
+    And I press "Show report"
+    Then "Student One" row "Question name 1a" column of "responses" table should contain "NQ"
+    And "Student One" row "Version 1a" column of "responses" table should contain "1"
+    And "Student One" row "Correctness 1a" column of "responses" table should contain "Correct"
+    # The choice is remembered as a user preference.
+    And I am on the "Quiz 1" "mod_quiz > Responses report" page
+    And I should see "Question name 1a"
+    And I should see "Version 1a"
+    And I should see "Correctness 1a"
+
+  @javascript
   Scenario: Report does not allow strange combinations of options
     Given I am on the "Quiz 1" "mod_quiz > Responses report" page logged in as teacher
     And the "Which tries" "select" should be enabled

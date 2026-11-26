@@ -79,6 +79,11 @@ class quiz_last_responses_table extends attempts_report_table {
             $summary = trim($value);
         }
 
+        if ($field == 'questionname') {
+            // Question names may use filters such as multilang, and are already escaped by format_string.
+            return format_string($summary, true, ['context' => $this->context]);
+        }
+
         if ($this->is_downloading() && $this->is_downloading() != 'html') {
             return $summary;
         }
@@ -115,9 +120,106 @@ class quiz_last_responses_table extends attempts_report_table {
 
         } else if (preg_match('/^right(\d+)$/', $colname, $matches)) {
             return $this->data_col($matches[1], 'rightanswer', $attempt);
+        } else if (preg_match('/^qname(\d+)$/', $colname, $matches)) {
+            return $this->data_col($matches[1], 'questionname', $attempt);
+        } else if (preg_match('/^qversion(\d+)$/', $colname, $matches)) {
+            return $this->data_col($matches[1], 'questionversion', $attempt);
+        } else if (preg_match('/^correctness(\d+)$/', $colname, $matches)) {
+            return $this->correctness_col($attempt, $matches[1]);
 
         } else {
             return parent::other_cols($colname, $attempt);
+        }
+    }
+
+    /**
+     * Text (and, when not downloading, an icon) saying whether the response in a slot was correct.
+     *
+     * @param stdClass $attempt the row data.
+     * @param int $slot the slot of the question.
+     * @return string the cell contents.
+     */
+    protected function correctness_col($attempt, $slot) {
+        if ($attempt->usageid == 0 || !$this->has_step_data($attempt, $slot)) {
+            return '-';
+        }
+
+        $state = $this->slot_state($attempt, $slot);
+        if ($state === null) {
+            return '-';
+        }
+
+        // The same text as the question review page, e.g. Correct, Incorrect, Not answered or Requires grading.
+        $text = $state->default_string(true);
+        if ($this->is_downloading()) {
+            return $text;
+        }
+
+        // Use the same icon as the response column.
+        $icon = '';
+        if ($state->is_finished() && $state != question_state::$needsgrading) {
+            $icon = $this->icon_for_fraction($this->slot_fraction($attempt, $slot));
+        }
+        return $icon . $text;
+    }
+
+    /**
+     * Is there any data for the question in this slot for this table row?
+     *
+     * @param stdClass $attempt the row data.
+     * @param int $slot the slot of the question.
+     * @return bool true if there is data for this slot.
+     */
+    protected function has_step_data($attempt, $slot) {
+        return isset($this->lateststeps[$attempt->usageid][$slot]);
+    }
+
+    /**
+     * Load the latest steps, and the name and version of each question that was attempted, if they will be shown.
+     */
+    protected function load_extra_data() {
+        parent::load_extra_data();
+
+        if (!$this->options->showqname && !$this->options->showqversion) {
+            return;
+        }
+
+        $questionids = [];
+        foreach ($this->lateststeps as $slots) {
+            foreach ($slots as $step) {
+                $questionids[$step->questionid] = $step->questionid;
+            }
+        }
+        if (!$questionids) {
+            return;
+        }
+
+        $this->add_question_name_and_version($questionids);
+    }
+
+    /**
+     * Add the name and version of the question attempted to each step loaded in {@see load_extra_data()}.
+     *
+     * The question attempted may differ between attempts, for example when using random questions.
+     *
+     * @param int[] $questionids ids of the questions attempted.
+     */
+    protected function add_question_name_and_version(array $questionids) {
+        global $DB;
+
+        [$insql, $params] = $DB->get_in_or_equal($questionids, SQL_PARAMS_NAMED);
+        $questions = $DB->get_records_sql("
+                SELECT q.id, q.name, qv.version
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                 WHERE q.id $insql", $params);
+
+        foreach ($this->lateststeps as $slots) {
+            foreach ($slots as $step) {
+                $question = $questions[$step->questionid] ?? null;
+                $step->questionname = $question->name ?? null;
+                $step->questionversion = $question->version ?? null;
+            }
         }
     }
 
@@ -126,7 +228,7 @@ class quiz_last_responses_table extends attempts_report_table {
     }
 
     protected function is_latest_step_column($column) {
-        if (preg_match('/^(?:question|response|right)([0-9]+)/', $column, $matches)) {
+        if (preg_match('/^(?:question|response|right|qname|qversion|correctness)([0-9]+)/', $column, $matches)) {
             return $matches[1];
         }
         return false;
@@ -142,6 +244,13 @@ class quiz_last_responses_table extends attempts_report_table {
         global $DB;
         return $DB->sql_order_by_text("{$alias}.questionsummary") . " AS question{$slot},
                 " . $DB->sql_order_by_text("{$alias}.rightanswer") . " AS right{$slot},
-                " . $DB->sql_order_by_text("{$alias}.responsesummary") . " AS response{$slot}";
+                " . $DB->sql_order_by_text("{$alias}.responsesummary") . " AS response{$slot},
+                (SELECT q.name
+                   FROM {question} q
+                  WHERE q.id = {$alias}.questionid) AS qname{$slot},
+                (SELECT qv.version
+                   FROM {question_versions} qv
+                  WHERE qv.questionid = {$alias}.questionid) AS qversion{$slot},
+                {$alias}.fraction AS correctness{$slot}";
     }
 }

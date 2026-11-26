@@ -53,6 +53,9 @@ class provider implements
         $collection->add_user_preference('quiz_report_responses_qtext', 'privacy:preference:qtext');
         $collection->add_user_preference('quiz_report_responses_resp', 'privacy:preference:resp');
         $collection->add_user_preference('quiz_report_responses_right', 'privacy:preference:right');
+        $collection->add_user_preference('quiz_report_responses_qname', 'privacy:preference:qname');
+        $collection->add_user_preference('quiz_report_responses_qversion', 'privacy:preference:qversion');
+        $collection->add_user_preference('quiz_report_responses_correctness', 'privacy:preference:correctness');
         $collection->add_user_preference('quiz_report_responses_which_tries', 'privacy:preference:which_tries');
 
         return $collection;
@@ -68,6 +71,9 @@ class provider implements
                 'qtext',
                 'resp',
                 'right',
+                'qname',
+                'qversion',
+                'correctness',
             ];
 
         foreach ($preferences as $key) {

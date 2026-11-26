@@ -67,6 +67,9 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         set_user_preference('quiz_report_responses_qtext', true);
         set_user_preference('quiz_report_responses_resp', true);
         set_user_preference('quiz_report_responses_right', true);
+        set_user_preference('quiz_report_responses_qname', true);
+        set_user_preference('quiz_report_responses_qversion', true);
+        set_user_preference('quiz_report_responses_correctness', true);
 
         provider::export_user_preferences($USER->id);
 
@@ -83,6 +86,15 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
 
         $this->assertNotEmpty($preferences->right);
         $this->assertEquals(transform::yesno(1), $preferences->right->value);
+
+        $this->assertNotEmpty($preferences->qname);
+        $this->assertEquals(transform::yesno(1), $preferences->qname->value);
+
+        $this->assertNotEmpty($preferences->qversion);
+        $this->assertEquals(transform::yesno(1), $preferences->qversion->value);
+
+        $this->assertNotEmpty($preferences->correctness);
+        $this->assertEquals(transform::yesno(1), $preferences->correctness->value);
     }
 
     /**
@@ -97,6 +109,9 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         set_user_preference('quiz_report_responses_qtext', false);
         set_user_preference('quiz_report_responses_resp', false);
         set_user_preference('quiz_report_responses_right', false);
+        set_user_preference('quiz_report_responses_qname', false);
+        set_user_preference('quiz_report_responses_qversion', false);
+        set_user_preference('quiz_report_responses_correctness', false);
 
         provider::export_user_preferences($USER->id);
 
@@ -113,6 +128,15 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
 
         $this->assertNotEmpty($preferences->right);
         $this->assertEquals(transform::yesno(0), $preferences->right->value);
+
+        $this->assertNotEmpty($preferences->qname);
+        $this->assertEquals(transform::yesno(0), $preferences->qname->value);
+
+        $this->assertNotEmpty($preferences->qversion);
+        $this->assertEquals(transform::yesno(0), $preferences->qversion->value);
+
+        $this->assertNotEmpty($preferences->correctness);
+        $this->assertEquals(transform::yesno(0), $preferences->correctness->value);
     }
 
     /**

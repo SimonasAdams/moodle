@@ -53,6 +53,10 @@ class quiz_first_or_all_responses_table extends quiz_last_responses_table {
                 return $this->get_summary_after_try($tablerow, $slot);
             case 'rightanswer' :
                 return $questionattempt->get_right_answer_summary();
+            case 'questionname':
+                return $questionattempt->get_question(false)->name;
+            case 'questionversion':
+                return $questionattempt->get_question(false)->version;
             default :
                 throw new coding_exception('Unknown question attempt field.');
         }
@@ -98,6 +102,11 @@ class quiz_first_or_all_responses_table extends quiz_last_responses_table {
             }
         }
         $this->rawdata = $newrawdata;
+    }
+
+    #[\Override]
+    protected function has_step_data($tablerow, $slot) {
+        return isset($this->questionusagesbyactivity[$tablerow->usageid]);
     }
 
     /**

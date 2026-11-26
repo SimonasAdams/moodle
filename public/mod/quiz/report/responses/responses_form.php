@@ -27,23 +27,30 @@ class quiz_responses_settings_form extends attempts_report_options_form {
 
     protected function other_preference_fields(MoodleQuickForm $mform) {
         $mform->addGroup([
+            $mform->createElement('advcheckbox', 'qname', '', get_string('questionname', 'quiz_responses')),
+            $mform->createElement('advcheckbox', 'qversion', '', get_string('questionversion', 'quiz_responses')),
             $mform->createElement('advcheckbox', 'qtext', '',
                 get_string('questiontext', 'quiz_responses')),
             $mform->createElement('advcheckbox', 'resp', '',
                 get_string('response', 'quiz_responses')),
+            $mform->createElement('advcheckbox', 'correctness', '', get_string('correctness', 'quiz_responses')),
             $mform->createElement('advcheckbox', 'right', '',
                 get_string('rightanswer', 'quiz_responses')),
         ], 'coloptions', get_string('showthe', 'quiz_responses'), [' '], false);
         $mform->disabledIf('qtext', 'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
         $mform->disabledIf('resp',  'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
         $mform->disabledIf('right', 'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
+        $mform->disabledIf('qname', 'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
+        $mform->disabledIf('qversion', 'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
+        $mform->disabledIf('correctness', 'attempts', 'eq', attempts_report::ENROLLED_WITHOUT);
     }
 
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
-        if ($data['attempts'] != attempts_report::ENROLLED_WITHOUT && !(
-                $data['qtext'] || $data['resp'] || $data['right'])) {
+        $showsomething = $data['qtext'] || $data['resp'] || $data['right'] ||
+                $data['qname'] || $data['qversion'] || $data['correctness'];
+        if ($data['attempts'] != attempts_report::ENROLLED_WITHOUT && !$showsomething) {
             $errors['coloptions'] = get_string('reportmustselectstate', 'quiz');
         }
 
